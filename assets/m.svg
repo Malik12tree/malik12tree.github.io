@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="193.66748mm"
+   height="193.66748mm"
+   viewBox="0 0 193.66748 193.66748"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="MTools.svg"
+   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.70710678"
+     inkscape:rotation="-1"
+     inkscape:cx="246.71676"
+     inkscape:cy="410.95479"
+     inkscape:window-width="1600"
+     inkscape:window-height="853"
+     inkscape:window-x="0"
+     inkscape:window-y="23"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="255.6794"
+       y="550.23975"
+       width="233.3036"
+       height="105.89271"
+       id="rect8822" />
+    <linearGradient
+       id="linearGradient10820"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#1bb355;stop-opacity:1;"
+         offset="0"
+         id="stop10818" />
+    </linearGradient>
+    <rect
+       x="285.86615"
+       y="637.25745"
+       width="36.608448"
+       height="46.254719"
+       id="rect2083" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     transform="translate(-9.11763,-12.84346)">
+    <ellipse
+       style="opacity:1;fill:#1c7b40;fill-opacity:1;stroke:none;stroke-width:0.854709;stroke-opacity:1"
+       id="circle13300"
+       cy="109.6772"
+       cx="105.95137"
+       rx="96.834"
+       ry="96.83374" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline"
+     transform="translate(-9.11763,-12.84346)">
+    <circle
+       style="opacity:1;fill:#1bb355;fill-opacity:1;stroke:none;stroke-width:0.83839;stroke-opacity:1"
+       id="path119"
+       cy="107.60221"
+       cx="103.07526"
+       r="94.984833" />
+    <text
+       xml:space="preserve"
+       transform="matrix(3.7438451,0,0,3.7438451,-1044.0146,-2354.3083)"
+       id="text2081"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:1.25;font-family:Z003;-inkscape-font-specification:'Z003, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect2083);fill:#ffffff;fill-opacity:1;stroke:none"><tspan
+         x="285.86523"
+         y="669.33781"
+         id="tspan16580">M</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:57.8546px;line-height:1.25;font-family:Z003;-inkscape-font-specification:'Z003, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:1.44637"
+       x="137.38013"
+       y="144.03871"
+       id="text38485"><tspan
+         sodipodi:role="line"
+         id="tspan38483"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:57.8546px;font-family:Z003;-inkscape-font-specification:'Z003, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#f2f2f2;stroke-width:1.44637"
+         x="137.38013"
+         y="144.03871">dp</tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Layer 3"
+     transform="translate(-9.11763,-12.84346)" />
+</svg>

@@ -1,0 +1,39 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.1/math.js"></script>
+
+<div class="pageCenter">
+    <table>
+        <tr>
+            <td trnslt='javamath.prop.equation+: '>Equation: </td>
+            <td> 
+                <input type="text" spellcheck="false" class="inputForm" value=""> 
+                <br>
+                <span class="errorInput"></span> 
+            </td>
+        </tr>
+        <tr>
+            <td trnslt='javamath.prop.mastersb+: '>Master Scoreboard: </td>
+            <td><input type="text" spellcheck="false" class="inputForm" value="math" id="masterSB"> </td>
+        </tr>
+        <tr>
+            <td trnslt='javamath.prop.oplabel+: '>Operation Label: </td>
+            <td><input type="text" spellcheck="false" class="inputForm" value="#op%index%" id="opLabel"> </td>
+        </tr>
+        <tr>
+            <td>Debug Mode: </td>
+            <td><input type="checkbox" id="debugMode"> </td>
+        </tr>
+        <tr>
+            <td trnslt='javamath.prop.variables+: '>Variables: </td>
+            <td>
+                <div class="toolbar">
+                    <img class="tool" src="/assets/add.svg" onload="tooltip($(this), tl('javamath.action.add_sb.desc'));">
+                    <img class="tool" src="/assets/upload_file.svg" onload="tooltip($(this), tl('javamath.action.load_sb.desc'));">
+                    <img class="tool" src="/assets/delete.svg" onload="tooltip($(this), tl('generic.empty+ +javamath.prop.variables'));">
+                </div>
+                <div class="sbVariables"></div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script src="/content/JavaMath/main.js"></script>

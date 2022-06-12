@@ -1,0 +1,30 @@
+{
+    "generic.empty": "Empty",
+    "generic.hide": "Hide",
+    "generic.toggle_visiblity": "Toggle Visiblity",
+    "generic.copy": "Copy",
+    "generic.download": "Download",
+
+    "page.home": "Home",
+    "page.sec.mgens.desc": "my first web project <3 mainly datapack generators with super huge URLs.",
+    
+    "page.javamath": "Java Math",
+    "page.javamath.desc": "convert math equations into mcfunction form. also includes variable support!",
+    "page.mgens.desc": "the actual website.",
+    "page.midinoteblock": "MIDI To Note Blocks",
+    "page.midinoteblock.desc": "convert MIDI files into noteblocks packed in mcfunctions!",
+    "page.particledraw": "Particle Draw",
+    "page.particledraw.desc": "draw particles using handy tools.",
+
+    "javamath.action.add_sb.desc": "define a score",
+    "javamath.action.load_sb.desc": "load scores from mcfunction",
+    "javamath.action.remove_sb.desc": "remove score",
+
+    "javamath.prop.equation": "Equation",
+    "javamath.prop.mastersb": "Master Scoreboard",
+    "javamath.prop.oplabel": "Operation Label",
+    "javamath.prop.variables": "Variables",
+    "javamath.prop.sbname": "Scoreboard Name",
+    "javamath.prop.plname": "Player Name",
+    "javamath.prop.dfvalue": "Default Value"
+}
