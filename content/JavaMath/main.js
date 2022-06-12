@@ -1,6 +1,6 @@
-const scope = (function() {
+window.scope = (function() {
 if (window.math == undefined) {
-    requestAnimationFrame(scope);
+    requestAnimationFrame(window.scope);
     return;
 }
 let mcf = '';
@@ -312,4 +312,4 @@ addScore();
 // 7358
 // :)
 });
-scope();
+window.scope();
