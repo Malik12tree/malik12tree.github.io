@@ -58,8 +58,9 @@ class CodeView {
                 } else {
                     type = HLUtils.getType(arg, args[index-1], args[index+1], this.highlightingManger, args);
                 }
+                let partNode = $(`<span>${foundComment ? arg: this.highlightingManger.applyRules(arg)} </span>`).addClass('cv-'+type);
 
-                lineNode.append( $(`<span>${arg} </span>`).addClass('cv-'+type) );
+                lineNode.append(partNode);
             });
             this.node.children('.lines').append(lineNode);
         });
@@ -93,6 +94,7 @@ let HLUtils = {
         let type = 'any';
 
         for (const key in hl) {
+            if (key=='applyRules') continue;
             const syntaxArg = hl[key];
             if (found) break;
             
@@ -128,7 +130,7 @@ let HighlighersData = {
     },
     mcfunction: {
         ops: ['add', 'enable', 'get', 'list', 'operation', 'remove', 'reset', 'set'],
-        sops: ['objectives', 'players'],
+        sops: ['objectives', 'players', 'store', 'result'],
     }
 }
 let Highlighers = {
@@ -138,6 +140,7 @@ let Highlighers = {
             'as', 'at',
         ],
         variable: [
+            /\{.+\}/g,
             function(arg, argbefore, argafter, args) {
                 if (args.includes('objectives')) return false;
                 return argbefore && HLUtils.is(argbefore, ...HighlighersData.mcfunction.ops);
@@ -153,14 +156,18 @@ let Highlighers = {
             /\~([0-9]+)/g
         ],
         secondary_keyword: [
-            '@a', '@e', '@p', '@r', '@s',
+            /\@a/g, /\@e/g, /\@p/g, /\@r/g, /\@s/g,
             function(arg, argbefore) {
                 return HLUtils.is(argbefore, ...Highlighers.mcfunction.keyword, ...HighlighersData.mcfunction.sops)
             },
         ],
         comment: [
             '#'
-        ]
+        ],
+        applyRules(arg){
+            return arg
+            .replaceAll(/\"((.)+)\"/g, "<span class=cv-digit>\"$1\"</span>")
+        }
     },
     javascript: {
         keyword: ["await", "break", "case", "catch", "class","const", "continue", "debugger", "default", "delete","do", "else", "enum", "export", "extends","false", "finally", "for", "function", "if","implements", "import", "in", "instanceof", "interface","let", "new", "null", "package", "private","protected", "public", "return", "super", "switch","static", "this", "throw", "try", "true","typeof",	"var",	"void",	"while", "with","yield"
@@ -177,5 +184,6 @@ let Highlighers = {
                 return HLUtils.is(ab, ...Highlighers.javascript.keyword) || HighlighersData.all.isOp(af);
             }
         ],
+        applyRules(arg){ return arg}
     }
 }

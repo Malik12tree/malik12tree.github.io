@@ -4,6 +4,8 @@
     "generic.toggle_visiblity": "Toggle Visiblity",
     "generic.copy": "Copy",
     "generic.download": "Download",
+    "generic.name": "Name",
+    "generic.objective": "Objective",
 
     "page.home": "Home",
     "page.sec.mgens.desc": "my first web project <3 mainly datapack generators with super huge URLs.",
@@ -23,8 +25,6 @@
     "javamath.prop.equation": "Equation",
     "javamath.prop.mastersb": "Master Scoreboard",
     "javamath.prop.oplabel": "Operation Label",
-    "javamath.prop.variables": "Variables",
-    "javamath.prop.sbname": "Scoreboard Name",
-    "javamath.prop.plname": "Player Name",
-    "javamath.prop.dfvalue": "Default Value"
+    "javamath.prop.fractional_precision": "Fractional Precision",
+    "javamath.prop.variables": "Variables"
 }

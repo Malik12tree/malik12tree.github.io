@@ -10,6 +10,7 @@ function compileJavaMath() {
     let str = '';
     mcc.replaceAll(' %sb%', '').replaceAll('%calc% ', '').replaceAll('#', '').split('\n').forEach(line => {
         let isSet = false;
+        line = line.replace(/((.)+)\^\=(\s+)?/g, '$1=$1**');
         if (line.startsWith('%set%')) {
             let args = line.split(' ');
             line = 'let ' + args[1] + ' = ' + args[2];
@@ -28,8 +29,13 @@ function compileJavaMath() {
 function addMCLine(line) {
     return mcf += '\n'+line;
 }
-function addMCConstant(value) {
-    let line = `scoreboard players set #${value} %sb% ${value}`;
+function cutNumberFP(value) {
+    let vstr = value+'';
+    // vstr = vstr.substr(0, vstr.length - $('#fpInp').val()*1);
+    return vstr;
+}
+function addMCConstant(value, isSpecial) {
+    let line = `scoreboard players set #${isSpecial ? 'fractional_precision': cutNumberFP(value)} %sb% ${value}`;
     if (!mcf.includes(line)) {
         addMCLine(line);
     }
@@ -91,7 +97,7 @@ function sampleScoreboardOf(node) {
         }
         return node.name + ' otherSB'
     } else {
-        return '#'+node.value + ' %sb%'
+        return '#'+ cutNumberFP(node.value) + ' %sb%'
     }
 }
 
@@ -121,9 +127,34 @@ function sampleVariable(name, inverse=false) {
 function sampleOperation(node) {
     return $('#opLabel').val().replaceAll('%index%', node.content ? node.content.index: node.index);
 }
+function addPower(node, arg1, arg2) {
+    let str='\n';
+    
+    if (arg1.value !== undefined) {
+        str += `%set% in %sb2% = ${arg1}\n`;
+    } else {
+        str += `%calc% in %sb2% = ${sampleOperation(arg1)}\n`;
+    }
+    
+    if (arg2.value !== undefined) {
+        str += `%set% in2 %sb2% = ${arg2}\n`;
+    } else {
+        str += `%calc% in2 %sb2% = ${sampleOperation(arg2)}\n`;
+    }
 
-function parseStatement(statement, options = {}) {    
+    str += `function math:power\n`;
+    str += `%calc% ${sampleOperation(node)} = .out math\n\n`;
+    mcc=str+mcc;
+}
+function parseStatement(statement, options = {}) {
+
+    if (statement.match(/[0-9]\.[0-9]/g)) {
+        throw new TypeError('decimals are against minecraft rules.')
+    }
+
     let scope = {};
+    // let fractionalPrecision = 10**$('#fpInp').val();
+
     $('.sbVariables > div').each(function() {
         let inputs = $(this).children('input');
         let name = sampleVariable(inputs[1].value);
@@ -134,8 +165,10 @@ function parseStatement(statement, options = {}) {
     keys.forEach(key => {
         statement = statement.replaceAll(sampleVariable(key, true), key);
     });
-    mcf = `# Statement is: ${statement}\n# Result In Minecraft: %%%\n# Mathmatical Result: ${math.evaluate(statement, scope)}\nscoreboard objectives add %sb% dummy`;
+    //summon marker ~ ~ ~ {Tags:["javamath"],data:{}}
+    mcf = `# Statement is: ${statement}\n# Result when all defined variables equal to zero: 0\nscoreboard objectives add %sb% dummy\n`;
     mcc = '';
+    // addMCConstant(fractionalPrecision, true)
     
     if (options.onlylog) return;
 
@@ -146,7 +179,9 @@ function parseStatement(statement, options = {}) {
 
     function setIndicesPopulate(node) {
         node.index = i++;
-
+        // if (node.value !== undefined) {
+        //     node.value *= fractionalPrecision;
+        // }
         if (node.args) {
             if (node.args[0].content) {
                 node.args[0] = node.args[0].content;
@@ -161,54 +196,67 @@ function parseStatement(statement, options = {}) {
         }
     }
     setIndicesPopulate(tree);
- 
+
     function populate(node) {        
         if (node.content) node = node.content;
 
-        // let single = isSingle(node);
         let constant = getConstant(node);
         let mixed = getMixed(node);
         let variable = getVariable(node);
 
         if(constant) {
             let str = '';
-            if (node.args[0].name !== undefined) {
-                // Is variable
-                
-                str += `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(node.args[0])}\n`
+            if (node.op=='^') {
+                addPower(node, ...node.args);
             } else {
-                // Is number
-                
-                addMCConstant(node.args[1]);
-                str += `%set% ${sampleOperation(node)} %sb% ${node.args[0]}\n`
+                if (node.args[0].name !== undefined) {
+                    // Is variable
+                str += `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(node.args[0])}\n`
+                } else {
+                    // Is number
+                    str += `%set% ${sampleOperation(node)} %sb% ${node.args[0]}\n`
+                }
+                if (node.args[1].value !== undefined) {
+                    addMCConstant(node.args[1]);
+                }
+                str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleScoreboardOf(node.args[1])}\n`;
+                mcc = str+mcc;
             }
-            str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleScoreboardOf(node.args[1])}\n`;
-
-            mcc = str+mcc;
             
         } else if(mixed) {
-            let str = '';
-            if (mixed.order) {
-                addMCConstant(mixed.ct);
-                str += `%calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= #${mixed.ct} %sb%\n`;
-                str += `%calc% ${sampleOperation(node)} %sb% = ${sampleOperation(mixed.vr)} %sb%\n`;
-
-            } else {
-                if (mixed.ct.name != undefined) {
-                    str = `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`;
+            if (node.op=='^') {
+                if (!mixed.order) {
+                    addPower(node, mixed.ct, mixed.vr);
                 } else {
-                    str = `%set% ${sampleOperation(node)} %sb% ${mixed.ct}\n`;
+                    addPower(node, mixed.vr, mixed.ct);
                 }
-                str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleOperation(mixed.vr)} %sb%\n`;
+            } else {
+                let str = '';
+                if (mixed.order) {
+                    addMCConstant(mixed.ct);
+                    str += `%calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= #${cutNumberFP(mixed.ct)} %sb%\n`;
+                    str += `%calc% ${sampleOperation(node)} %sb% = ${sampleOperation(mixed.vr)} %sb%\n`;
+                } else {
+                    if (mixed.ct.name != undefined) {
+                        str = `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`;
+                    } else {
+                        str = `%set% ${sampleOperation(node)} %sb% ${mixed.ct}\n`;
+                    }
+                    str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleOperation(mixed.vr)} %sb%\n`;
+                }
+                
+                mcc = str+mcc;
             }
-            
-            mcc = str+mcc;
         } else if(variable) {
-            let str = '';
-            str += `%calc% ${sampleOperation(node)} %sb% = ${sampleOperation(variable[0])} %sb%\n`;
-            str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`;
-
-            mcc = str+mcc
+            if (node.op=='^') {
+                addPower(node, ...node.args);
+            } else {
+                let str = '';
+                str += `%calc% ${sampleOperation(node)} %sb% = ${sampleOperation(variable[0])} %sb%\n`;
+                str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`;
+    
+                mcc = str+mcc
+            }
         }
 
         if (node.args) {
@@ -216,16 +264,47 @@ function parseStatement(statement, options = {}) {
         }
     }
     populate(tree);
+    
+    populate=null;
+    setIndicesPopulate=null;
+
+    //second pass
+    
+    // 0       1     2           3
+    // %calc% <name> <objective> <operation> ...
+    
+    // 0     1      2           3
+    // %set% <name> <objective> <value>
+
+    let pass2 = '';
+    mcc.split('\n').forEach(line => {
+        let args = line.split(' ');
+        
+        // Before
+        if (args[3] && args[3].length == 2 && args[3].includes('=')) {
+            // pass2 += `\n%calc% ${args[1]} ${args[2]} *= ${fractionalPrecision}\n`
+        }
+        pass2 += line+'\n';
+        
+        // After
+        // if (args[0] == '%set%') {
+        //     pass2 += `execute store result entity @p[tag="javamath"]\n`
+        // }
+
+    });
+    mcc = pass2;
+
     let js = compileJavaMath();
+
     let result = "can't proceed: either syntax error or variables are being used...";
     try {
-        result = eval(compileJavaMath());
+        result = eval(js);
     } catch (error) {
         js = '';
     }
     
-    if ($('#debugMode')[0].checked) {
-        return js + '\n// Result: ' + result;
+    if ($('#debugMode')[0] && $('#debugMode')[0].checked) {
+        return js + '// Result: ' + result;
     }
     
     if (mcc) {
@@ -233,8 +312,8 @@ function parseStatement(statement, options = {}) {
     }
     mcf += '\n\n'+mcc;
     return mcf = sampleVariable(
+        // .replace('%%%', result)
         mcf
-        .replace('%%%', result)
         .replaceAll('%set%', 'scoreboard players set')
         .replaceAll('%calc%', 'scoreboard players operation')
         .replaceAll('%sb%', options.sb||'math'),
@@ -247,25 +326,33 @@ function parseStatement(statement, options = {}) {
 // HTML Stuff
 let equationInput = $('.inputForm');
 let codeview = new CodeView({
-    content: `. . .`,
+    content: parseStatement(equationInput.val()),
     langs: ['mcfunction'],
 }).init();
 
 codeview.node.addClass('stickleftbottom')
 $('.subBody').append(codeview.node);
 
-$('.pageCenter').bind('input', function(e) {
+function updateCode() {
+    if (equationInput.val() == '') return;
+    
     try {
         codeview.content = parseStatement(equationInput.val(), {
             sb: $('#masterSB').val()
         });
-        codeview.activeLang = $('#debugMode')[0].checked ? "javascript": "mcfunction";
+        codeview.activeLang = ($('#debugMode')[0] && $('#debugMode')[0].checked ? "javascript": "mcfunction");
         codeview.update();
 
         $('.errorInput').text('');
     } catch (error) {
         $('.errorInput').text(error.toString());
     }
+}
+$('#fpInp').bind('change', updateCode);
+$('.pageCenter').bind('input', function(e) {
+    if (e.target.id == 'fpInp') return;
+    
+    updateCode();
 })
 let actions = $('.toolbar').children();
 
@@ -283,9 +370,9 @@ function addScore(sname='math', pname, dvalue=0) {
     let score = $(`
     <div class="sbForm">
         <img class="tool" src="/assets/delete.svg" onload="tooltip($(this), tl('javamath.action.remove_sb.desc'));">
-        <label trnslt='javamath.prop.sbname'>Scoreboard Name:</label>
+        <label trnslt='generic.objective'>Objective:</label>
         <input type="text" spellcheck="false" value=${sname}>
-        <label trnslt='javamath.prop.plname'>Player Name:</label>
+        <label trnslt='generic.name'>Name:</label>
         <input type="text" spellcheck="false" value=${pname}>
         </div>`);
         // <label trnslt='javamath.prop.dfvalue'>Default Value:</label>

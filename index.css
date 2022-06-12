@@ -214,10 +214,9 @@ li {
 
 .pageCenter {
     position: relative;
-    left: 50%;
-    top: 10%;
+    top: 5%;
     width: fit-content;
-    transform: translateX(-50%);
+    /* transform: translateX(-50%); */
 }
 .pageCenter td {
     padding: 5px;
@@ -236,19 +235,49 @@ input {
     transition: box-shadow 100ms;
     color: var(--color-subtle_text);
 }
-
-input:focus {
+input[type="text"]:focus {
     border: 2px solid var(--color-accent);
     box-shadow: 0 0 5px var(--color-accent);
 
     transition: box-shadow 100ms;
 }
+
+input[type="range"] {
+
+    -webkit-appearance: none;
+    height: 2.5px;
+    border-radius: 5px;  
+    background: var(--color-ui);
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17.5px;
+    height: 17.5px;
+    border-radius: 50%; 
+    background: var(--color-accent);
+    /* box-shadow: 0 0 7.5px var(--color-accent); */
+    cursor: e-resize;
+}
+
+input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17.5px;
+    height: 17.5px;
+    border-radius: 50%; 
+    background: var(--color-accent);
+    cursor: e-resize;
+}
+
 .inputForm {
     width: calc(100% - 20px);
 }
 .errorInput {
     color: rgb(255, 34, 34);
-    font-size: .75em;
+    font-size: .85em;
     font-family: monospace;
 }
 .sbVariables {
@@ -286,7 +315,12 @@ input:focus {
     display: flex;
     flex-direction: column;
     padding: 5px;
+    font-size: .9em;
+    position: relative;
     border-top: 2px solid var(--color-subtle_text);
+}
+.sbForm input{
+    font-size: .9em;   
 }
 .sbForm:nth-child(2n+1) {
     border-right: 2px solid var(--color-subtle_text);
@@ -317,8 +351,9 @@ input:focus {
     transition: filter 100ms ease;
 }
 .sbForm img {
-    width: 20px;
-    margin-left: auto;
+    height: 20px;
+    position: absolute;
+    right: 5px;
 }
 hr {
     border-color: var(--color-subtle_text);
@@ -381,6 +416,10 @@ hr {
     box-shadow: 0 0 20px black;
     /* border: 1px solid var(--color-subtle_text); */
     overflow-x: none;
+}
+.codeview .lines {
+    height: calc(100% - 40px);
+    overflow: auto;
 }
 .codeview.show {
     transform: translateY(0%);

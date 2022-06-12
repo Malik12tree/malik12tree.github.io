@@ -87,6 +87,7 @@ function switchPage(path, skipSearch=false) {
         requestAnimationFrame(() => switchPage(path, skipSearch));
         return;
     }
+    $('title').text('Malik12tree | '+path)
 
     path = preload[path.toLowerCase()].path;
     $('.subBody').html(

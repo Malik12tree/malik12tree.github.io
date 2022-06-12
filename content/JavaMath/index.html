@@ -5,9 +5,9 @@
         <tr>
             <td trnslt='javamath.prop.equation+: '>Equation: </td>
             <td> 
-                <input type="text" spellcheck="false" class="inputForm" value=""> 
+                <span class="errorInput" style="position: absolute;transform: translateY(-100%);margin-top: -5px;"></span> 
+                <input type="text" spellcheck="false" class="inputForm" value="((3/4) * 30 + 7*5) + 9"> 
                 <br>
-                <span class="errorInput"></span> 
             </td>
         </tr>
         <tr>
@@ -18,10 +18,16 @@
             <td trnslt='javamath.prop.oplabel+: '>Operation Label: </td>
             <td><input type="text" spellcheck="false" class="inputForm" value="#op%index%" id="opLabel"> </td>
         </tr>
-        <tr>
-            <td>Debug Mode: </td>
-            <td><input type="checkbox" id="debugMode"> </td>
-        </tr>
+        <!-- <tr>
+            <td trnslt='javamath.prop.fractional_precision+: '>Fractional Precision: </td>
+            <td><input id="fpInp" type="range" class="inputForm" value="2" min="0" max="3" oninput="fpLabel.innerText=this.value"> </td>
+            <td><span id="fpLabel">2</span></td>
+        </tr> -->
+        <script>
+            if (location.href == 'http://127.0.0.1:5500/?JavaMath') {
+                $('.pageCenter').append(`<tr> <td>JavaScript Mode: </td> <td><input type="checkbox" id="debugMode"> </td> </tr>`)                
+            }
+        </script>
         <tr>
             <td trnslt='javamath.prop.variables+: '>Variables: </td>
             <td>
