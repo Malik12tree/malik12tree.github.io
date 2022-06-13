@@ -170,12 +170,19 @@ let simplificationRules = [
         pattern: /\((\s+)?(?<left>\d+)(\s+)?\-(\s+)?(?<right>\d+)(\s+)?\)/,
         operate: '-'
     },
+     // (a) => a
+    {
+        type: 'replace',
+        pattern: /\((?<target>\d+)\)/,
+        source: '$1'
+    },
 ]
 function simplify(statement) {
 
     // pass 1
     for (let i = 0; i < simplificationRules.length; i++) {
         const rule = simplificationRules[i];
+        
         let match = statement.match(rule.pattern);
         switch (rule.type) {
             case 'operate':
@@ -184,6 +191,8 @@ function simplify(statement) {
                     match = statement.match(rule.pattern);
                 }
                 break;
+            case 'replace':
+                statement = statement.replace(rule.pattern, rule.source)
         }
     }
     
@@ -201,15 +210,13 @@ function parseStatement(statement, options = {}) {
     
     // let scope = {};
     // $('.sbVariables > div').each(function() {
-        //     let inputs = $(this).children('input');
-        //     let name = sampleVariable(inputs[1].value);
-        //     scope[name] = 1;
-        // });
-        
-        let keys = Object.keys(scope).sort((a,b) => b.length - a.length);
-        keys.forEach(key => {
-            statement = statement.replaceAll(sampleVariable(key, true), key);
-        });
+    //     let inputs = $(this).children('input');
+    //     let name = sampleVariable(inputs[1].value);
+    //     scope[name] = 1;
+    // });
+    
+    statement = sampleVariable(statement, false)
+    
     mcf = `# Simplified Statement is: ${statement}\nscoreboard objectives add %sb% dummy\n`;
     mcc = '';
     // addMCConstant(fractionalPrecision, true)
@@ -387,7 +394,7 @@ $('.pageCenter').bind('input', function(e) {
     
     updateCode();
 })
-let actions = $('.toolbar').children();
+let actions = $('.pageCenter .toolbar').children();
 
 $(actions[0]).bind('click', function() {
     addScore();
