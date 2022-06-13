@@ -61,8 +61,8 @@ function setTheme(theme) {
     $(':root').removeClass('dark-theme light-theme');
     $(':root').addClass(theme);
 }
-let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-setTheme(isDarkTheme ?  "dark-theme" : "light-theme");
+// let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+// setTheme(isDarkTheme ?  "dark-theme" : "light-theme");
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
     // TODO: add check for theme selector

@@ -7,7 +7,8 @@
     --prop-body_space: 10px;
     --color-accent: lightgreen;
 
-    --prop-codeview_height: 400px
+    --prop-codeview_height: 400px;
+    --prop-codeview_width: 500px
 }
 .dark-theme {
     --color-text: rgb(255, 255, 255);
@@ -344,11 +345,12 @@ input[type="range"]::-moz-range-thumb {
 .tool{
     cursor: pointer;
     filter: brightness(50%);
-    transition: filter 100ms ease;
+    transition: filter 100ms ease, transform 100ms ease;
 }
 .tool:hover{
     filter: brightness(75%);
-    transition: filter 100ms ease;
+    transform: scale(115%);
+    transition: filter 100ms ease, transform 100ms ease;
 }
 .sbForm img {
     height: 20px;
@@ -410,7 +412,7 @@ hr {
     font-family: monospace;
     background-color: var(--color-code);
     position: fixed;
-    width: 500px;
+    width: var(--prop-codeview_width);
     overflow-y: auto;
     height: var(--prop-codeview_height);
     box-shadow: 0 0 20px black;
@@ -435,6 +437,7 @@ hr {
     transform: translateY(90%);
     animation: hideDown 500ms ease-in;
 }
+
 .codeview.show .toolbar {
     animation: slideDown 500ms ease-in;
     bottom: 0;
@@ -474,4 +477,29 @@ hr {
 }
 .cv-operator {
     color: rgb(119, 0, 255);
+}
+.toolSeperator {
+    display: inline-block;
+    border-left: 2px solid var(--color-subtle_text);
+    filter: brightness(50%);
+    height: 100%;
+    padding-right: 5px;
+    margin-left: 5px;
+}
+
+.mizer {
+    padding: 20px;
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+.maximized .mizer {
+    background: url('/assets/fullscreen_exit.svg');
+    background-size: contain;
+    image-rendering: pixelated;
+}
+.minimized .mizer {
+    background: url('/assets/fullscreen.svg');
+    background-size: contain;
+    image-rendering: pixelated;
 }

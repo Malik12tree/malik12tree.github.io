@@ -3,17 +3,30 @@ class CodeView {
         let scope = this;
         this.langs = data.langs;
         this.activeLang = data.activeLang || data.langs[0];
-        this.node = $('<div class="codeview show"><div class="lines"></div><div class="toolbar"></div>');
+        this.node = $('<div class="codeview show minimized"><div class="mizer tool"></div><div class="lines"></div><div class="toolbar"></div>');
         this.hidden = false;
+        this.ondownload = data.ondownload || scope.download;
+        this.zoom = 9;
         
+        this.node.children('.mizer').on('click', function() {
+            if (scope.node.hasClass('maximized')) {
+                scope.minimize()
+            } else {
+                scope.maximize()
+            }
+        })
+
         let buttons = [
             tooltip($('<img class="tool" src="/assets/expand_more.svg"/>'), tl('generic.toggle_visiblity')),
             tooltip($('<img class="tool" src="/assets/content_copy.svg"/>'), tl('generic.copy')),
-            tooltip($('<img class="tool" src="/assets/file_download.svg"/>'), tl('generic.download'))
+            tooltip($('<img class="tool" src="/assets/file_download.svg"/>'), tl('generic.download')),
+            $('<div class=toolSeperator></div>'),
+            tooltip($('<img class="tool" src="/assets/zoom_in.svg"/>'), tl('generic.zoom_in')),
+            tooltip($('<img class="tool" src="/assets/zoom_out.svg"/>'), tl('generic.zoom_out')),
         ];
         buttons[0].on('click', function() {
             scope.hidden = scope.node.hasClass('show');
-            
+            scope.minimize();
             if (scope.node.hasClass('show')) {
                 scope.node.removeClass('show');
                 scope.node.addClass('hide');
@@ -24,12 +37,37 @@ class CodeView {
             }
         })
         buttons[1].on('click', () => scope.copy());
-        buttons[2].on('click', () => scope.download());
+        buttons[2].on('click', () => scope.ondownload());
+
+        scope.updateZoom();
+        buttons[4].on('click', () => {
+            scope.zoom++;
+            scope.updateZoom();
+        });
+        buttons[5].on('click', () => {
+            scope.zoom--;
+            scope.updateZoom();
+        });
 
         this.node.children('.toolbar').append(...buttons);
 
         // this.cursorNode = $('<div class="cursor"></div>');
         this.content = data.content || '';
+    }
+    updateZoom(){
+        this.node.attr('style', `font-size: ${this.zoom}pt`);
+    }
+    maximize(){
+        this.node.removeClass('minimized');
+        this.node.addClass('maximized');
+        $(':root')[0].style.setProperty('--prop-codeview_width', '95%');
+        $(':root')[0].style.setProperty('--prop-codeview_height', '90%');
+    }
+    minimize(){
+        this.node.removeClass('maximized');
+        this.node.addClass('minimized');
+        $(':root')[0].style.removeProperty('--prop-codeview_width');
+        $(':root')[0].style.removeProperty('--prop-codeview_height');
     }
     get highlightingManger(){
         return Highlighers[this.activeLang];

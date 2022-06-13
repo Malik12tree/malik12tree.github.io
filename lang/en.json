@@ -6,6 +6,8 @@
     "generic.download": "Download",
     "generic.name": "Name",
     "generic.objective": "Objective",
+    "generic.zoom_in": "Zoom In",
+    "generic.zoom_out": "Zoom Out",
 
     "page.home": "Home",
     "page.sec.mgens.desc": "my first web project <3 mainly datapack generators with super huge URLs.",
