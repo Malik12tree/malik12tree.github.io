@@ -47,7 +47,6 @@ fetch('/lang/en.json').then(e => e.json()).then(e => {
     };
     load();
 });
-
 ["Home", "JavaMath", "MGens", "MGens/MidiNoteBlock", "MGens/ParticleDraw"].forEach((page) => {
     fetch('/content/'+page).then( e => e.text()).then(e => {
         preload[page.toLowerCase()] = {
@@ -57,18 +56,36 @@ fetch('/lang/en.json').then(e => e.json()).then(e => {
     });
 });
 
+let themes = ['dark_mode', 'light_mode'];
+let tmindex = 0;
+
+$('#theme-selector').bind('click', function() {
+    tmindex++;
+    tmindex = tmindex % 2;
+    localStorage.setItem('theme', tmindex);
+    setTheme(themes[tmindex].replace('_','-').replace('mode','theme'));
+    $('#theme-selector').attr('src', `/assets/${themes[tmindex]}.svg`);
+})
+
 function setTheme(theme) {
+    if (theme == 'system') {
+        theme = getSystemTheme();
+    }
+
     $(':root').removeClass('dark-theme light-theme');
     $(':root').addClass(theme);
 }
-// let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-// setTheme(isDarkTheme ?  "dark-theme" : "light-theme");
-
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-    // TODO: add check for theme selector
-    const newColorScheme = event.matches ? "dark-theme" : "light-theme";
-    setTheme(newColorScheme);
-});
+function getSystemTheme(params) {
+    let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return isDarkTheme ?  "dark-theme" : "light-theme";
+}
+if (localStorage.getItem('theme')) {
+    for (let i = 0; i < parseInt(localStorage.theme); i++) {
+        $('#theme-selector').click();
+    }
+} else {
+    setTheme('dark-theme');
+}
 
 function animate() {
     requestAnimationFrame(animate);
