@@ -208,7 +208,7 @@ function createCommandsMap(statement) {
     let match = statement.match(CMD_PATTERN);
     let i = 0;
     while (match) {
-        mcf+= `execute store result score #cmd${i} %sb% run ${match[1]}`;
+        mcf+= `execute store result score #cmd${i} %sb% run ${match[1]}\n`;
         statement = statement.replace(match[0], '#cmd'+i);
         
         match = statement.match(CMD_PATTERN);
