@@ -86,6 +86,9 @@ function getVariable(node) {
 }
 function sampleScoreboardOf(node) {
     if (node.name != undefined) {
+        if (node.name) {
+            return node.name + ' %sb%';
+        }
         let inps = $('.sbVariables').find('input');
         let inp;
         for (let i = 0; i < inps.length; i+=2) {
@@ -173,8 +176,8 @@ let simplificationRules = [
      // (a) => a
     {
         type: 'replace',
-        pattern: /\((?<target>\d+)\)/,
-        source: '$1'
+        pattern: /\((((?![\*\+\-\/\%\^]).)+)\)/,
+        source: '$1',
     },
 ]
 function simplify(statement) {
@@ -195,29 +198,36 @@ function simplify(statement) {
                 statement = statement.replace(rule.pattern, rule.source)
         }
     }
-    
-    
-
 
     return statement;
 }
-function parseStatement(statement, options = {}) {
+const CMD_PATTERN = /\[(((?![\[\]]).)+)\]/;
+function createCommandsMap(statement) {
+    commandsMap = [];
     
-    if (statement.match(/[0-9]\.[0-9]/g)) {
-        throw new TypeError('decimals are against minecraft rules.')
+    let match = statement.match(CMD_PATTERN);
+    let i = 0;
+    while (match) {
+        mcf+= `execute store result score #cmd${i} %sb% run ${match[1]}`;
+        statement = statement.replace(match[0], '#cmd'+i);
+        
+        match = statement.match(CMD_PATTERN);
+        i++;
     }
-    statement = simplify(statement); 
+    return statement;
+}
+function parseStatement(statement, options = {}) {
+    mcf='';
+
+    const orignalStatement = statement;
+    if (statement.match(/[0-9]\.[0-9]/g)) {
+        throw new TypeError('Decimals are against minecraft rules.')
+    }
     
-    // let scope = {};
-    // $('.sbVariables > div').each(function() {
-    //     let inputs = $(this).children('input');
-    //     let name = sampleVariable(inputs[1].value);
-    //     scope[name] = 1;
-    // });
+    statement = sampleVariable(simplify(createCommandsMap(statement)), false);
+
+    mcf = `# Statement is: ${orignalStatement}\n# Compiled as : ${statement}\nscoreboard objectives add %sb% dummy\n`+mcf;
     
-    statement = sampleVariable(statement, false)
-    
-    mcf = `# Simplified Statement is: ${statement}\nscoreboard objectives add %sb% dummy\n`;
     mcc = '';
     // addMCConstant(fractionalPrecision, true)
     
@@ -270,9 +280,10 @@ function parseStatement(statement, options = {}) {
         } else if(mixed) {
             let str = '';
             if (mixed.order) {
-                addMCConstant(mixed.ct);
-                str += `execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= #${cutNumberFP(mixed.ct)} %sb%\n`;
-                // str += `%calc% ${sampleOperation(node)} %sb% = ${sampleOperation(mixed.vr)} %sb%\n`;
+                if (mixed.ct.value != undefined) {
+                    addMCConstant(mixed.ct);
+                }
+                str += `execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= ${sampleScoreboardOf(mixed.ct)}\n`;
             } else {
                 if (mixed.ct.name != undefined) {
                     str = `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`;
@@ -438,5 +449,7 @@ addScore();
 // 6358 + 1000
 // 7358
 // :)
+
+window.scope=null;
 });
 window.scope();

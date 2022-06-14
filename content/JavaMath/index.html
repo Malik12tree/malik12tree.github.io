@@ -31,11 +31,6 @@
             <td><input id="fpInp" type="range" class="inputForm" value="2" min="0" max="3" oninput="fpLabel.innerText=this.value"> </td>
             <td><span id="fpLabel">2</span></td>
         </tr> -->
-        <script>
-            if (location.href == 'http://127.0.0.1:5500/?JavaMath') {
-                $('.pageCenter').append(`<tr> <td>JavaScript Mode: </td> <td><input type="checkbox" id="debugMode"> </td> </tr>`)                
-            }
-        </script>
         <tr>
             <td trnslt='javamath.prop.variables+: '>Variables: </td>
             <td>
@@ -48,6 +43,25 @@
             </td>
         </tr>
     </table>
+    <script>
+        if (location.href == 'http://127.0.0.1:5500/?JavaMath') {
+            $('.pageCenter table:first-child').append(`<tr> <td>JavaScript Mode: </td> <td><input type="checkbox" id="debugMode"> </td> </tr>`)                
+        }
+    </script>
+    <div class="tothemoreyouknow">
+        <h4 m>More Syntax</h4>
+        <table>
+            <tr>
+                <td><code>[&#60;command&#62;]</code></td>
+                <td>would be considered as the result of the command.</td>
+            </tr>
+            <tr>
+                <td>example:</td>
+                <td>[time query gametime] would substitute into the game time in ticks.</td>
+            </tr>
+        </table>
+        ...
+    </div>
 </div>
 
 <script src="/content/JavaMath/main.js"></script>

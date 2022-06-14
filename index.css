@@ -238,7 +238,18 @@ li {
     position: relative;
     top: 5%;
     width: fit-content;
-    /* transform: translateX(-50%); */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+}
+@media screen and (max-width:800px){
+    .pageCenter {
+        flex-direction: column;
+    }
+    .tothemoreyouknow {
+        padding-bottom: 100px;
+    }
 }
 .pageCenter td {
     padding: 5px;
@@ -297,6 +308,11 @@ input[type="range"]::-moz-range-thumb {
 .inputForm {
     width: calc(100% - 20px);
 }
+/* @media screen and (max-width:650px){
+    .inputForm{
+        width: 50%;
+    }
+} */
 .errorInput {
     color: rgb(255, 34, 34);
     font-size: .85em;
@@ -509,13 +525,31 @@ hr {
     right: 5px;
     top: 5px;
 }
-.maximized .mizer {
+.hide .mizer {
+    pointer-events: none;
+}
+.maximized:not(.hide) .mizer {
     background: url('/assets/fullscreen_exit.svg');
     background-size: contain;
     image-rendering: pixelated;
 }
-.minimized .mizer {
+.minimized:not(.hide) .mizer {
     background: url('/assets/fullscreen.svg');
     background-size: contain;
     image-rendering: pixelated;
+}
+code {
+    background-color: var(--color-code);
+    padding: 2px;
+    border: 1px solid var(--color-subtle_text);
+    color: var(--color-subtle_text);
+}
+.tothemoreyouknow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.tothemoreyouknow td {
+    padding-right: 5px;
+    font-size: .9em;
 }
