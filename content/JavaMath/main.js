@@ -30,12 +30,12 @@ function addMCLine(line) {
     return mcf += '\n'+line;
 }
 function cutNumberFP(value) {
-    let vstr = value+'';
+    // let vstr = value+'';
     // vstr = vstr.substr(0, vstr.length - $('#fpInp').val()*1);
-    return vstr;
+    return value;
 }
 function addMCConstant(value, isSpecial) {
-    let line = `scoreboard players set #${isSpecial ? 'fractional_precision': cutNumberFP(value)} %sb% ${value}`;
+    let line = `scoreboard players set #${isSpecial ? 'precision': cutNumberFP(value)} %sb% ${value}`;
     if (!mcf.includes(line)) {
         addMCLine(line);
     }
@@ -86,9 +86,10 @@ function getVariable(node) {
 }
 function sampleScoreboardOf(node) {
     if (node.name != undefined) {
-        if (node.name) {
+        if (/\$hash\$cmd\d+/.test(node.name)) {
             return node.name + ' %sb%';
         }
+        
         let inps = $('.sbVariables').find('input');
         let inp;
         for (let i = 0; i < inps.length; i+=2) {
@@ -100,7 +101,7 @@ function sampleScoreboardOf(node) {
         if (inp) {
             return node.name + ' ' + inp.value;
         }
-        return node.name + ' unknown_scoreboard'
+        return node.name +' '+$('#masterSB').val()
     } else {
         return '#'+ cutNumberFP(node.value) + ' %sb%'
     }
@@ -202,9 +203,7 @@ function simplify(statement) {
     return statement;
 }
 const CMD_PATTERN = /\[(((?![\[\]]).)+)\]/;
-function createCommandsMap(statement) {
-    commandsMap = [];
-    
+function createCommandsMap(statement) {    
     let match = statement.match(CMD_PATTERN);
     let i = 0;
     while (match) {
@@ -216,42 +215,61 @@ function createCommandsMap(statement) {
     }
     return statement;
 }
+function variableScalar(statement, variable) {
+    if (variable.name !== undefined && variable.isScaled) {
+        return `%calc% ${sampleScoreboardOf(variable)} *= #precision %sb%\n${statement}%calc% ${sampleScoreboardOf(variable)} /= #precision %sb%\n`
+    }
+    return statement;
+}
 function parseStatement(statement, options = {}) {
     mcf='';
 
     const orignalStatement = statement;
     if (statement.match(/[0-9]\.[0-9]/g)) {
-        throw new TypeError('Decimals are against minecraft rules.')
+        // throw new TypeError('Decimals are against minecraft rules.')
     }
     
-    statement = sampleVariable(simplify(createCommandsMap(statement)), false);
+    statement = sampleVariable(simplify(createCommandsMap(statement)), false).replaceAll(/(?<=\d)\$dot\$(?=\d)/g, '.');
 
     mcf = `# Statement is: ${orignalStatement}\n# Compiled as : ${statement}\nscoreboard objectives add %sb% dummy\n`+mcf;
     
     mcc = '';
-    // addMCConstant(fractionalPrecision, true)
-    
     if (options.onlylog) return;
-
+    
     let tree = math.parse(statement);
     if (tree.content) tree = tree.content;    
     let i = 0;
+    let number_of_scaled_plus_minus = 0;
+    let fractional_precision = 10**parseInt($('#fpInp').val());
+    addMCConstant(fractional_precision, true)
 
     function setupTree(node) {
         node.index = i++;
-        
-        let constant = getConstant(node);
 
         if (node.args) {
+            
+            if ((node.op == '*' || node.op == '/') && getConstant(node)) {
+                node.args[0].isScaled = true;
+            }
             for (let i = 0; i < node.args.length; i++) {
                 if (node.args[i].content) {
                     node.args[i] = node.args[i].content;
                 }
+
+                if ((node.op == '+' || node.op == '-') && isSingle(node.args[i])) {
+                    number_of_scaled_plus_minus++;
+                    node.args[i].isScaled = true;
+                }
+                if (node.args[i].isScaled && node.args[i].value) {
+                    node.args[i].value = Math.round(node.args[i].value*fractional_precision);
+                }
+                
                 setupTree(node.args[i]);
             }
         }
     }
     setupTree(tree);
+    
     
     function populate(node) {
         let isfn = isFn(node);
@@ -262,11 +280,11 @@ function parseStatement(statement, options = {}) {
         if (isfn) {
             throw new SyntaxError('Support of math functions is still in development!')
             // addFn(node, ...node.args);
-        } else if(constant) {
+        } else if(constant) { // a := b
             let str = '';
             if (node.args[0].name !== undefined) {
                 // Is variable
-                str += `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(node.args[0])}\n`
+                str += variableScalar(`%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(node.args[0])}\n`, node.args[0])
             } else {
                 // Is number
                 str += `%set% ${sampleOperation(node)} %sb% ${node.args[0]}\n`
@@ -274,19 +292,19 @@ function parseStatement(statement, options = {}) {
             if (node.args[1].value !== undefined) {
                 addMCConstant(node.args[1]);
             }
-            str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleScoreboardOf(node.args[1])}\n`;
+            str += variableScalar(`%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleScoreboardOf(node.args[1])}\n`, node.args[1]);
             mcc = str+mcc;
             
-        } else if(mixed) {
+        } else if(mixed) { // op(n) := a
             let str = '';
             if (mixed.order) {
                 if (mixed.ct.value != undefined) {
                     addMCConstant(mixed.ct);
                 }
-                str += `execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= ${sampleScoreboardOf(mixed.ct)}\n`;
+                str += variableScalar(`execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= ${sampleScoreboardOf(mixed.ct)}\n`,mixed.ct);
             } else {
-                if (mixed.ct.name != undefined) {
-                    str = `%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`;
+                if (mixed.ct.name !== undefined) {
+                    str = variableScalar(`\n%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`,mixed.ct);
                 } else {
                     str = `%set% ${sampleOperation(node)} %sb% ${mixed.ct}\n`;
                 }
@@ -294,7 +312,7 @@ function parseStatement(statement, options = {}) {
             }
             
             mcc = str+mcc;
-        } else if(variable) {
+        } else if(variable) { // op(n) := op(m)
             
             mcc = `execute store result score ${sampleOperation(node)} %sb% run ${sampleOperation(variable[0])} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`
                   +mcc;
@@ -308,20 +326,11 @@ function parseStatement(statement, options = {}) {
     populate=null;
     setupTree=null;
 
-    // let js = compileJavaMath();
-
-    // let result = "can't proceed: either syntax error or variables are being used...";
-    // try {
-    //     result = eval(js);
-    // } catch (error) {
-    //     js = '';
-    // }
-    
-    // if ($('#debugMode')[0] && $('#debugMode')[0].checked) {
-    //     return js + '// Result: ' + result;
-    // }
-    
     if (mcc) {
+        // if (number_of_scaled_plus_minus>1) {
+        //     mcc += `\nexecute store result score .out %sb% run %calc% ${sampleOperation({index:0})} %sb% /= ${10**number_of_scaled_plus_minus} math`;
+        // } else {
+        // }
         mcc += `\n%calc% .out %sb% = ${sampleOperation({index:0})} %sb%`;
     }
     mcf += '\n\n'+mcc;
@@ -384,7 +393,7 @@ $('.subBody').append(codeview.node);
 function updateCode() {
     if (equationInput.val() == '') return;
     
-    try {
+    // try {
         $('.errorInput').text('');
 
         codeview.content = parseStatement(equationInput.val(), {
@@ -392,12 +401,12 @@ function updateCode() {
         });
         codeview.activeLang = ($('#debugMode')[0] && $('#debugMode')[0].checked ? "javascript": "mcfunction");
         codeview.update();
-    } catch (error) {
-        $('.errorInput').text(
-                error.toString()
-                // .replace("TypeError: Cannot read properties of undefined (reading 'index')", 'SyntaxError: Empty functions are not allowed')
-            );
-    }
+    // } catch (error) {
+    //     $('.errorInput').text(
+    //             error.toString()
+    //             // .replace("TypeError: Cannot read properties of undefined (reading 'index')", 'SyntaxError: Empty functions are not allowed')
+    //         );
+    // }
 }
 $('#fpInp').bind('change', updateCode);
 $('.pageCenter').bind('input', function(e) {

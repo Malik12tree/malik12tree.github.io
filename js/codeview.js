@@ -26,6 +26,7 @@ class CodeView {
         ];
         buttons[0].on('click', function() {
             scope.hidden = scope.node.hasClass('show');
+            localStorage.setItem('codeview_state', scope.hidden);
             scope.minimize();
             if (scope.node.hasClass('show')) {
                 scope.node.removeClass('show');
@@ -53,6 +54,10 @@ class CodeView {
 
         // this.cursorNode = $('<div class="cursor"></div>');
         this.content = data.content || '';
+    
+        if (localStorage.codeview_state && localStorage.codeview_state == 'true') {
+            buttons[0].trigger('click');
+        }
     }
     updateZoom(){
         this.node.attr('style', `font-size: ${this.zoom}pt`);

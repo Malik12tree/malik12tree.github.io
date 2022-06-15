@@ -6,18 +6,10 @@
             <td trnslt='javamath.prop.equation+: '>Equation: </td>
             <td> 
                 <span class="errorInput" style="position: absolute;transform: translateY(-100%);margin-top: -5px;"></span> 
-                <input type="text" spellcheck="false" class="inputForm" value="((3/4) * 30 + 7*5) + 9"> 
+                <input type="text" spellcheck="false" class="inputForm" value=""> 
                 <br>
             </td>
         </tr>
-        <!-- <tr>
-            <td>Namespace / Path: </td>
-            <td style="display: flex;flex-direction: row;justify-content: space-between;">
-                <input type="text" spellcheck="false" value="math" id="namespaceinp"> 
-                /
-                <input type="text" spellcheck="false" id="pathinp"> 
-            </td>
-        </tr> -->
         <tr>
             <td trnslt='javamath.prop.mastersb+: '>Master Scoreboard: </td>
             <td><input type="text" spellcheck="false" class="inputForm" value="math" id="masterSB"> </td>
@@ -26,11 +18,14 @@
             <td trnslt='javamath.prop.oplabel+: '>Operation Label: </td>
             <td><input type="text" spellcheck="false" class="inputForm" value="#op%index%" id="opLabel"> </td>
         </tr>
-        <!-- <tr>
+        <tr>
             <td trnslt='javamath.prop.fractional_precision+: '>Fractional Precision: </td>
-            <td><input id="fpInp" type="range" class="inputForm" value="2" min="0" max="3" oninput="fpLabel.innerText=this.value"> </td>
-            <td><span id="fpLabel">2</span></td>
-        </tr> -->
+            <td>
+                <input id="fpInp" type="range" class="inputForm" value="2" min="0" max="3" oninput="fpLabel.innerText=this.value" style="width: 90%;"> 
+                <span id="fpLabel" style="position: absolute;margin-top: -3px;">2</span>
+            </td>
+            <td><info>Determines the accuracy of floating numbers.</info></td>
+        </tr>
         <tr>
             <td trnslt='javamath.prop.variables+: '>Variables: </td>
             <td>
@@ -49,17 +44,13 @@
         }
     </script>
     <div class="tothemoreyouknow">
-        <h4 m>More Syntax</h4>
-        <table>
-            <tr>
-                <td><code>[&#60;command&#62;]</code></td>
-                <td>would be considered as the result of the command.</td>
-            </tr>
-            <tr>
-                <td>example:</td>
-                <td>[time query gametime] would substitute into the game time in ticks.</td>
-            </tr>
-        </table>
+        <div>
+            <h4 m>For The More You Know</h4>
+        </div>
+        <ul>
+            <li>Using <code>[&#60;command&#62;]</code>would be considered as the result of the command. <br> For example <code>[time query gametime]</code> would substitute into the game time in ticks.</li>
+            
+        </ul>
         ...
     </div>
 </div>
