@@ -30,8 +30,6 @@ function addMCLine(line) {
     return mcf += '\n'+line;
 }
 function cutNumberFP(value) {
-    // let vstr = value+'';
-    // vstr = vstr.substr(0, vstr.length - $('#fpInp').val()*1);
     return value;
 }
 function addMCConstant(value, isSpecial) {
@@ -84,7 +82,7 @@ function getVariable(node) {
     }
     return null;
 }
-function sampleScoreboardOf(node, attribute='props') {
+function sampleScoreboardOf(node) {
     if (node.name != undefined) {
         if (/\$hash\$cmd\d+/.test(node.name)) {
             return node.name + ' %sb%';
@@ -98,15 +96,10 @@ function sampleScoreboardOf(node, attribute='props') {
                 break;
             }
         }
-        switch (attribute) {
-            case 'props':
-                if (inp) {
-                    return node.name + ' ' + inp.value;
-                }
-                return node.name +' '+$('#masterSB').val();
-            case 'element':
-                return inp.parent();
+        if (inp) {
+            return node.name + ' ' + inp.value;
         }
+        return node.name +' '+$('#masterSB').val();
     } else {
         return '#'+ cutNumberFP(node.value) + ' %sb%'
     }
@@ -221,6 +214,10 @@ function createCommandsMap(statement) {
     return statement;
 }
 function variableScalar(statement, variable) {
+    if (!$('#vrscale')[0].checked) return statement;
+    if ($('#fpInp').val() == '0') return statement;
+
+
     if (variable.name !== undefined && variable.isScaled) {
         return `%calc% ${sampleScoreboardOf(variable)} *= #precision %sb%\n${statement}%calc% ${sampleScoreboardOf(variable)} /= #precision %sb%\n`
     }
