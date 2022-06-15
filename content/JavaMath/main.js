@@ -84,7 +84,7 @@ function getVariable(node) {
     }
     return null;
 }
-function sampleScoreboardOf(node) {
+function sampleScoreboardOf(node, attribute='props') {
     if (node.name != undefined) {
         if (/\$hash\$cmd\d+/.test(node.name)) {
             return node.name + ' %sb%';
@@ -98,10 +98,15 @@ function sampleScoreboardOf(node) {
                 break;
             }
         }
-        if (inp) {
-            return node.name + ' ' + inp.value;
+        switch (attribute) {
+            case 'props':
+                if (inp) {
+                    return node.name + ' ' + inp.value;
+                }
+                return node.name +' '+$('#masterSB').val();
+            case 'element':
+                return inp.parent();
         }
-        return node.name +' '+$('#masterSB').val()
     } else {
         return '#'+ cutNumberFP(node.value) + ' %sb%'
     }
@@ -314,7 +319,7 @@ function parseStatement(statement, options = {}) {
             mcc = str+mcc;
         } else if(variable) { // op(n) := op(m)
             
-            mcc = `execute store result score ${sampleOperation(node)} %sb% run ${sampleOperation(variable[0])} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`
+            mcc = `execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(variable[0])} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`
                   +mcc;
         }
         if (node.args) {
