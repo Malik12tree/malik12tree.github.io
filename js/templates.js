@@ -1,6 +1,10 @@
 let templates = {
     'info': function(elemenet) {
-        return tooltip($(`<img src="/assets/question_mark.svg" />`), elemenet.innerText);
+        let node = $(`<img src="/assets/question_mark.svg" class="ignore"/>`);
+        node.on('dblclick', function(e) {
+            $('.tooltip').addClass('wide')
+        })
+        return tooltip(node, elemenet.innerHTML+'<br><br>Tip: double click for wide view.');
     }
 }
 

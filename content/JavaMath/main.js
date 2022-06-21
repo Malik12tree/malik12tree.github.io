@@ -99,7 +99,7 @@ function sampleScoreboardOf(node) {
         if (inp) {
             return node.name + ' ' + inp.value;
         }
-        return node.name +' '+$('#masterSB').val();
+        return node.name +' unknown';
     } else {
         return '#'+ cutNumberFP(node.value) + ' %sb%'
     }
@@ -115,7 +115,7 @@ let symbols = [
     ['&','$ampersand$'],
     ['!','$not$'],
     ['@','$at$'],
-    ['%','$percent$'],
+    // ['%','$percent$'],
     ['~','$tilde$']
 ]
 function sampleVariable(name, inverse=false) {
@@ -150,7 +150,7 @@ function addFn(node, ...args) {
     mcc=str+mcc;
 
 }
-function isFn(node) {
+function isFn(node) { 
     return node.op == '^' || typeof node.fn === 'object';
 }
 let simplificationRules = [
@@ -173,6 +173,12 @@ let simplificationRules = [
         operate: '-'
     },
      // (a) => a
+    {
+        type: 'replace',
+        pattern: /\((((?![\*\+\-\/\%\^]).)+)\)/,
+        source: '$1',
+    },
+     // a^2 =
     {
         type: 'replace',
         pattern: /\((((?![\*\+\-\/\%\^]).)+)\)/,
@@ -214,13 +220,17 @@ function createCommandsMap(statement) {
     return statement;
 }
 function variableScalar(statement, variable) {
-    if (!$('#vrscale')[0].checked) return statement;
     if ($('#fpInp').val() == '0') return statement;
+    if (variable.name === undefined) return statement;
 
+    if ($('#vrscale')[0].checked && variable.isScaled)
+        return `%calc% ${sampleScoreboardOf(variable)} *= #precision %sb%\n${statement}%calc% ${sampleScoreboardOf(variable)} /= #precision %sb%\n`;
 
-    if (variable.name !== undefined && variable.isScaled) {
-        return `%calc% ${sampleScoreboardOf(variable)} *= #precision %sb%\n${statement}%calc% ${sampleScoreboardOf(variable)} /= #precision %sb%\n`
-    }
+    if (!$('#vrscale')[0].checked && !variable.isScaled)
+        return `%calc% #temp %sb% = ${sampleScoreboardOf(variable)}\n%calc% #temp %sb% /= #precision %sb%\n${
+            statement.replace(" "+sampleScoreboardOf(variable), " #temp %sb%")
+        }`;
+
     return statement;
 }
 function parseStatement(statement, options = {}) {
@@ -232,7 +242,7 @@ function parseStatement(statement, options = {}) {
     }
     
     statement = sampleVariable(simplify(createCommandsMap(statement)), false).replaceAll(/(?<=\d)\$dot\$(?=\d)/g, '.');
-
+    
     mcf = `# Statement is: ${orignalStatement}\n# Compiled as : ${statement}\nscoreboard objectives add %sb% dummy\n`+mcf;
     
     mcc = '';
@@ -241,7 +251,6 @@ function parseStatement(statement, options = {}) {
     let tree = math.parse(statement);
     if (tree.content) tree = tree.content;    
     let i = 0;
-    let number_of_scaled_plus_minus = 0;
     let fractional_precision = 10**parseInt($('#fpInp').val());
     addMCConstant(fractional_precision, true)
 
@@ -280,6 +289,7 @@ function parseStatement(statement, options = {}) {
         let variable = getVariable(node);
 
         if (isfn) {
+            console.log(node);
             throw new SyntaxError('Support of math functions is still in development!')
             // addFn(node, ...node.args);
         } else if(constant) { // a := b
@@ -395,7 +405,7 @@ $('.subBody').append(codeview.node);
 function updateCode() {
     if (equationInput.val() == '') return;
     
-    // try {
+    try {
         $('.errorInput').text('');
 
         codeview.content = parseStatement(equationInput.val(), {
@@ -403,12 +413,7 @@ function updateCode() {
         });
         codeview.activeLang = ($('#debugMode')[0] && $('#debugMode')[0].checked ? "javascript": "mcfunction");
         codeview.update();
-    // } catch (error) {
-    //     $('.errorInput').text(
-    //             error.toString()
-    //             // .replace("TypeError: Cannot read properties of undefined (reading 'index')", 'SyntaxError: Empty functions are not allowed')
-    //         );
-    // }
+    } catch (error) { $('.errorInput').text(error) }
 }
 $('#fpInp').bind('change', updateCode);
 $('.pageCenter').bind('input', function(e) {

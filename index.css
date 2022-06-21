@@ -19,17 +19,22 @@
     --color-accent: lightgreen;
 }
 .light-theme {
-    --color-code: rgb(221, 221, 255);
-    --color-text: rgb(0, 0, 0);
-    --color-subtle_text: rgb(116, 116, 116);
-    --color-ui: rgb(225, 235, 243);
-    --color-dark_ui: rgb(202, 210, 216);
-    --color-back: rgb(204, 204, 204);
-    --color-accent: rgb(221, 121, 27);
+    --color-code: hsl(240, 100%, 93%);
+    --color-text: hsl(0, 0%, 0%);
+    --color-subtle_text: hsl(0, 0%, 27%);
+    --color-ui: hsl(0, 0%, 100%);
+    --color-dark_ui: hsl(0, 0%, 80%);
+    --color-back: hsl(0, 0%, 90%);
+    --color-accent: hsl(205, 100%, 60%);
 }
-.light-theme img:not(.card img:not(.non_color)) {
+.light-theme img:not(.card img:not(.non_color),.ignore) {
     filter: brightness(50%);
 }
+::selection {
+    background-color: var(--color-accent);
+}
+.dark-theme ::selection{ text-shadow: 1px 1px 0 black; }
+.light-theme ::selection{ text-shadow: 1px 1px 0 white; }
 
 ul {
     padding: 0;
@@ -40,6 +45,7 @@ body,html {
     font-family: Poppins;
     color: var(--color-text);
     background: var(--color-back);
+    overflow: hidden;
 }
 header {
     user-select: none;
@@ -177,10 +183,10 @@ li {
 }
 .light-theme .card:hover img.non_color {
     filter:
-        contrast(100%)
+        contrast(0%)
         sepia(100%)
-        saturate(1000%)
-        hue-rotate(0deg);
+        saturate(1100%)
+        hue-rotate(180deg);
     /* color: rgb(255, 136, 0); */
 }
 .card > * {
@@ -190,6 +196,7 @@ li {
 .tooltip {
     position: fixed;
     height: fit-content;
+    max-width: 200px;
     font-size: .6em;
     left: var(--mouse-x);
     top:  var(--mouse-y);
@@ -200,6 +207,16 @@ li {
     background-color: var(--color-ui);
     padding: 2px;
     z-index: 16;
+}
+.tooltip.wide {
+    /* left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); */
+    max-width: 100%;
+    width: 25%;
+    font-size: 0.9em;
+    /* margin: 0;
+    height: 50%; */
 }
 .hidden {
     display: none;
@@ -243,9 +260,10 @@ li {
     justify-content: space-between;
     width: 100%;
 }
-@media screen and (max-width:800px){
+@media screen and (max-width:900px){
     .pageCenter {
         flex-direction: column;
+        align-items: center;
     }
     .tothemoreyouknow {
         padding-bottom: 100px;
@@ -339,13 +357,17 @@ input[type="range"]::-moz-range-thumb {
     position: absolute;
     font-family: monospace;
 }
-@media screen and (max-width: 650px) {
-    .sbVariables {
-        grid-template-columns: 100%;
-    }
-}
 .sbVariables .sbForm:only-child {
     width: calc(200% - 12.5px);
+}
+@media screen and (max-width: 650px) {
+    .sbVariables {
+        min-width: 206px;
+        grid-template-columns: 100%;
+    }
+    .sbVariables .sbForm:only-child {
+        width: calc(100% - 12.5px);
+    }
 }
 [m] {
     margin: 0;
@@ -490,6 +512,11 @@ hr {
     width: 90%;
     position: absolute;
 }
+@media screen and (max-width: 500px){
+    :root{
+        --prop-codeview_width: 90%
+    }
+}
 .stickleftbottom {
     right: 0;
     bottom: 0;
@@ -501,7 +528,7 @@ hr {
 .dark-theme .cv-any { color: rgb(200, 200, 200); }
 .dark-theme .cv-comment { color: rgb(120, 120, 120); }
 .dark-theme .cv-digit { color: rgb(255, 0, 76); }
-.dark-theme .cv-operator { color: rgb(119, 0, 255); }
+    .dark-theme .cv-operator { color: rgb(119, 0, 255); }
 
 .light-theme .cv-variable { color: rgb(0, 0, 0); }
 .light-theme .cv-keyword { color: rgb(0, 0, 255); }
@@ -560,16 +587,17 @@ code {
     background-image: linear-gradient(red, gray, green);
     background-size: 0% 3px;
     background-position-y: bottom;
-    cursor: pointer;
     background-repeat: no-repeat;
     transition: background-size 300ms ease;
+    cursor: default;
 }
-.tothemoreyouknow div:hover h4{
+.dark-theme .tothemoreyouknow div:hover h4{
+    cursor: pointer;
     background-size: 100% 3px;
     text-shadow: 0 0 10px rgb(176, 92, 255);
     transition: background-size 300ms ease;
 }
-.tothemoreyouknow div:hover {
+.dark-theme .tothemoreyouknow div:hover {
     background: linear-gradient(rgb(176, 92, 255) 25%, blue 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

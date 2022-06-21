@@ -175,12 +175,13 @@ function tooltip(node, text, delay=0) {
 
         timeout = setTimeout(() => {
                 $('.tooltip').removeClass('hidden');
-                $('.tooltip span').text(text);
+                $('.tooltip span').html(text);
             }, delay);
 
             isHover = true;
         }, function () {
             $('.tooltip').addClass('hidden');
+            $('.tooltip').removeClass('wide');
             clearTimeout(timeout);            
             isHover = false;
         }
