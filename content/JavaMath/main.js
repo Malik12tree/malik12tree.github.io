@@ -268,7 +268,6 @@ function parseStatement(statement, options = {}) {
                 }
 
                 if ((node.op == '+' || node.op == '-') && isSingle(node.args[i])) {
-                    number_of_scaled_plus_minus++;
                     node.args[i].isScaled = true;
                 }
                 if (node.args[i].isScaled && node.args[i].value) {
@@ -339,10 +338,6 @@ function parseStatement(statement, options = {}) {
     setupTree=null;
 
     if (mcc) {
-        // if (number_of_scaled_plus_minus>1) {
-        //     mcc += `\nexecute store result score .out %sb% run %calc% ${sampleOperation({index:0})} %sb% /= ${10**number_of_scaled_plus_minus} math`;
-        // } else {
-        // }
         mcc += `\n%calc% .out %sb% = ${sampleOperation({index:0})} %sb%`;
     }
     mcf += '\n\n'+mcc;
