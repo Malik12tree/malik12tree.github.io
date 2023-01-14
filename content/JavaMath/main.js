@@ -44,8 +44,7 @@ const form = new Form({
         updateCode();
     }
 });
-
-$('.pageCenter').prepend(form.node);
+$('.pageCenter').prepend(form.build().node);
 
 class MinecraftMathParser {
     constructor() {
@@ -87,54 +86,54 @@ class MinecraftMathParser {
     }
 
     populate(node) {
-        const { getOperation } = this;
-
         const isfn = this.isFn(node);
         const constantWithConstant = this.getConstantWithConstant(node);
         const constantWithOperation = this.getConstantWithOperation(node);
         const operationWithOperation = this.getOperationWithOperation(node);
-        const operation = getOperation(node);
+        const operation = this.getOperation(node);
 
         this.startGroup();
         if (isfn) {
-            throw new SyntaxError('Support of math functions is still in development!')
+            throw new SyntaxError('Math functions are not yet supported!')
             // addFn(node, ...node.args);
 
         }
         else if (constantWithConstant) { // a := b
-            if (this.isVariable(node, 0)) {
-                
-                this.addLine(`%calc% ${operation} %sb% = ${this.addScoreboardByVariable(node.args[0])}`);
+            let leftSide;
+            if (this.isConstant(node, 0)) {
+
+                leftSide = `%set% ${operation} %sb% ${node.args[0]}`;
 
             } else {
                 
-                this.addLine(`%set% ${operation} %sb% ${node.args[0]}`);
+                leftSide = `%calc% ${operation} %sb% = ${this.addScoreboardByVariable(node.args[0])}`;
 
             }
+            this.addLine(leftSide);
             
             this.addIfConstant(node, 1);
 
-            this.addLine(
-                this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${this.addScoreboardByVariable(node.args[1])}`, node)
-            );
+            this.addLine(this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${this.addScoreboardByVariable(node.args[1])}`, node));
 
         } else if (constantWithOperation) { // op(n) := a
             
             this.addIfConstant(constantWithOperation.variable);
 
+            const sideOperation = this.getOperation(constantWithOperation.operation);
+            
             if (constantWithOperation.order) {
-                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${getOperation(constantWithOperation.operation)} %sb% ${node.op}= ${this.addScoreboardByVariable(constantWithOperation.variable)}`, node));
+                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${sideOperation} %sb% ${node.op}= ${this.addScoreboardByVariable(constantWithOperation.variable)}`, node));
             } else {
                 this.addLines(
                     `%set% ${operation} %sb% ${constantWithOperation.variable}`,
 
-                    this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${getOperation(constantWithOperation.operation)} %sb%`, node)
+                    this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${sideOperation} %sb%`, node)
                 );
             }
             
         } else if (operationWithOperation) { // op(n) := op(m)
 
-            this.addLine(`execute store result score ${operation} %sb% run %calc% ${getOperation(operationWithOperation[0])} %sb% ${node.op}= ${getOperation(operationWithOperation[1])} %sb%`)
+            this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${this.getOperation(operationWithOperation[0])} %sb% ${node.op}= ${this.getOperation(operationWithOperation[1])} %sb%`, node));
         }
         this.endGroup();
 
@@ -321,12 +320,16 @@ class MinecraftMathParser {
     scaleOperation(line, node) {
         if (form.get('fractionalPrecision') == 0) return line;
         const inverseOperation = this.inverseOperationsMap[node.op];
+        
+        if (!inverseOperation) return line;
 
-        if (inverseOperation) {
-            line += `\n%calc% ${this.getOperation(node)} %sb% ${inverseOperation}= #precision %sb%`;
-        }
+        const scalar = `%calc% ${this.getOperation(node)} %sb% ${inverseOperation}= #precision %sb%`;
 
-        return line;
+        
+        if (node.op == '/')
+            return scalar + '\n' + line;
+        
+        return line + '\n' + scalar;
     }
 }
 const parser = new MinecraftMathParser();
@@ -352,6 +355,7 @@ function updateCode() {
         form.setError('equation', '');    
     } catch (error) {
         form.setError('equation', error);
+        console.error(error);
     }
 }
 

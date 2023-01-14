@@ -49,6 +49,7 @@ body,html {
     color: var(--color-text);
     background: var(--color-back);
     overflow-x: hidden;
+    overflow-y: auto;
 }
 header {
     user-select: none;
@@ -65,14 +66,14 @@ header h2 {
     margin: 0;
     cursor: pointer;
 }
-header .opacityHov {
+header .opacityHover {
     opacity: 1;
     transition: opacity 100ms ease;
 }
-header .opacityHov:hover {
+header .opacityHover:hover {
     opacity: .8;
 }
-header .toolbar{
+header .toolbar {
     position: absolute;
     right: 10px;
     width: 300px;
@@ -316,6 +317,11 @@ input[type="range"]::-moz-range-thumb {
     color: var(--color-subtle_text);
     font-size: .75em;
 }
+@media screen and (max-width: 750px) {
+    .variables {
+        margin-bottom: 50px;
+    }
+}
 
 [m] {
     margin: 0;
@@ -323,6 +329,7 @@ input[type="range"]::-moz-range-thumb {
 .sbForm {
     display: flex;
     flex-direction: column;
+    gap: 5px;
     padding: 5px;
     font-size: .9em;
     position: relative;
@@ -330,10 +337,9 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 2px;
 }
 .sbForm input {
-    font-size: .9em;   
+    font-size: .9em;
 }
 .toolbar {
-    width: 100%;
     height: 25px;
     padding-bottom: 2px;
     user-select: none;
@@ -399,17 +405,24 @@ hr {
     100% { transform: translateY(0%); }
 }
 .codeview {
+    position: fixed;
     padding: 10px 5px;
+    
     font-family: monospace;
     background-color: var(--color-code);
-    position: fixed;
-    width: var(--prop-codeview_width);
-    overflow-y: auto;
+    
     height: var(--prop-codeview_height);
+    width: 100%;
+    max-width: var(--prop-codeview_width);
+
     box-shadow: 0 0 20px black;
-    overflow: hidden;
-    transition: height 500ms ease;
+    transition: height 500ms ease , max-width 500ms ease;
+    
     box-sizing: border-box;
+    
+    overflow: hidden;
+
+    z-index: 99;
 }
 .codeview .lines {
     height: calc(100% - 40px);
@@ -436,11 +449,6 @@ hr {
     width: 90%;
     position: absolute;
     bottom: 0;
-}
-@media screen and (max-width: 500px){
-    :root{
-        --prop-codeview_width: 100%
-    }
 }
 .stickleftbottom {
     right: 0;
@@ -535,7 +543,7 @@ input[type="checkbox"]:hover{
     flex-wrap: wrap;
 }
 .form > div > label {
-    width: 200px;
+    width: 150px;
 }
 
 .errorLabel {
@@ -543,4 +551,44 @@ input[type="checkbox"]:hover{
     font-size: .85em;
     font-family: monospace;
     margin-left: 205px;
+}
+/* Dialog */
+@keyframes popIn {
+    from {transform: translate(-50%, -50%) scale(0.0);}
+    to   {transform: translate(-50%, -50%) scale(1.0);}
+}
+dialog {
+    position: absolute;
+    margin: 0;
+    
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 500px;
+
+    color: var(--color-text);
+    background-color: var(--color-dark_ui);
+    
+    border: none;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    padding: 0;
+    
+    animation: popIn 300ms ease;
+}
+dialog > .handle > span {
+    flex: 1;
+}
+dialog > .handle {
+    display: flex;
+
+    width: 100%;
+    background-color: var(--color-ui);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    box-sizing: border-box;
+}
+dialog > .body {
+    padding: 10px;
+    box-sizing: border-box;
 }

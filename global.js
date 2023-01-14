@@ -1,6 +1,8 @@
+;(async function() {
+//
 // This file will be shared by all the pages
 
-let pressing = {
+const pressing = {
     ctrl: false,
     shift: false,
     alt: false,
@@ -32,215 +34,248 @@ if (location.search == '?' || location.search == '') {
     search('Home')
 }
 
-let preload = {};
+const preload = {};
 
 let page = 'Home';
-function tl(id) { }
 
-fetch('/lang/en.json').then(e => e.json()).then(e => {
-    window.tl = id => {
-        let final = '';
-        id.split('+').forEach(tag => {
-            final += e[tag] || tag;
-        });
-        return final;
+const language = await fetch('/lang/en.json').then(e => e.json());
+Object.assign(window, {
+    tl(id) {
+        return language[id] || id;
+    }
+})
+const pageNames = ["Home", "JavaMath"];
+for (let i = 0; i < pageNames.length; i++) {
+    const page = pageNames[i];
+    const content = await fetch('/content/'+page).then( e => e.text() );
+    
+    preload[page] = {
+        path: page,
+        content: content
     };
-    load();
-});
-["Home", "JavaMath", "MGens", "MGens/MidiNoteBlock", "MGens/ParticleDraw"].forEach((page) => {
-    fetch('/content/'+page).then( e => e.text()).then(e => {
-        preload[page.toLowerCase()] = {
-            path: page,
-            content: e+`<script>links();</script>`
-        };
-    });
-});
+}
 
-let themes = ['dark_mode', 'light_mode'];
-let tmindex = 0;
+const themes = ['dark_mode', 'light_mode'];
+let themeIndex = 0;
 
 $('#theme-selector').bind('click', function() {
-    tmindex++;
-    tmindex = tmindex % 2;
-    localStorage.setItem('theme', tmindex);
-    setTheme(themes[tmindex].replace('_','-').replace('mode','theme'));
-    $('#theme-selector').attr('src', `/assets/${themes[tmindex]}.svg`);
+    themeIndex++;
+    themeIndex = themeIndex % 2;
+    localStorage.setItem('theme', themeIndex);
+    setTheme(themes[themeIndex]);
+
+    $('#theme-selector').attr('src', `/assets/${themes[themeIndex]}.svg`);
 })
 
 function setTheme(theme) {
     if (theme == 'system') {
         theme = getSystemTheme();
+    } else {
+        theme = theme.replace('_','-').replace('mode','theme');
     }
 
     $(':root').removeClass('dark-theme light-theme');
     $(':root').addClass(theme);
 }
 function getSystemTheme() {
-    let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     return isDarkTheme ?  "dark-theme" : "light-theme";
 }
-if (localStorage.getItem('theme')) {
-    for (let i = 0; i < parseInt(localStorage.theme); i++) {
-        $('#theme-selector').click();
-    }
+const storedTheme = localStorage.getItem('theme');
+if (storedTheme) {
+    themeIndex = storedTheme;
+    setTheme(themes[themeIndex]);
 } else {
     setTheme('dark-theme');
 }
 
-function animate() {
-    requestAnimationFrame(animate);
-
-    $('[trnslt]').each(function() {
-        let id = $(this).attr('trnslt');;
-        $(this).removeAttr('trnslt');
-        $(this).text(tl(id));
-    
-    })
-}
-
 // creating pages
-function switchPage(path, skipSearch=false) {
-    if (preload[path.toLowerCase()] == undefined) {
-        requestAnimationFrame(() => switchPage(path, skipSearch));
-        return;
-    }
-    $('title').text('Malik12tree | '+path)
+function switchPage(path) {
+    $('title').text('Malik12tree | ' + path)
 
-    path = preload[path.toLowerCase()].path;
-    $('.subBody').html(
-            preload[path.toLowerCase()].content
-        );
+    $('.subBody').empty();
+    $('.subBody').append($(preload[path].content));
    
     hideToolTip();
-    page = path;
-    if (!skipSearch) {
-        search(path);
-    } else {
-        skipSearch('Home');
-    }
-}
+    search(path);
 
-// creating links
-let chachedImages = {};
-function link(data) {
-    let name = data.name;
-    let id = data.id;
-    let icon = data.icon;
-    data.sec = data.sec || "datapack";
+    initPages();
 
-    let node = $( `<div class="card">
-            ${!chachedImages[id] ? `<img src="${icon}" alt="${id}" ${data.color?'':'class="non_color"'}>`: ''}
-            <h6>${name}</h6>
-        </div>`);
-    
-    if (chachedImages[id]) {
-        chachedImages[id].insertBefore(node.children('h6'));
-    } else {
-        chachedImages[id] = node.children('img');
-    }
-
-    node.bind('click', function() {
-        if (pressing.ctrl) {
-            window.open('?' + id, '_blank')
-        } else {
-            switchPage(id, data.skipSearch);
-        }
+    $('[definition]').each(function() {
+        const id = $(this).attr('definition');
+        $(this).removeAttr('definition');
+        $(this).text(tl(id));
     });
 
-    tooltip(node, data.description);
-    $(`.cardsContainer[sec="${data.sec}"]`).append(node);
+    $('[pageScript]').remove();
+
+    if (!(path in pageMap)) return;
+    
+    const { info, scripts } = pageMap[path];
+    if (!info) {
+        return $('#page-info').hide();
+    }
+    $('#page-info').show();
+    $('#page-info')[0].onclick = () => {
+        new Dialog({
+            title: 'Info',
+            lines: info,
+        }).build().show();
+    }
+
+
+    scripts.forEach(script => {
+        const scriptElement = document.createElement('script');
+        for (const attribute in script) {
+            if (attribute == "src") continue;
+            const value = script[attribute];
+            
+            scriptElement.setAttribute(attribute, value);
+        }
+        const url = new URL(script.src, location);
+        if (!script.src.startsWith('https://'))
+            url.searchParams.set("_", Math.floor(Math.random()*0xffffff).toString(16));
+
+        scriptElement.setAttribute('src', url.href);
+        scriptElement.setAttribute('pageScript', '');
+
+        document.head.append(scriptElement);
+    });
+}
+
+const pageMap = {};
+// creating links
+function addPage(data) {
+    const { name, id, icon, section = "datapack", color, description } = data;
+    pageMap[id] = data;
+
+    const node = document.createElement('div');
+    node.classList.add('card');
+    const title = document.createElement('h6');
+    title.textContent = name;
+    const img = new Image();
+    img.src = icon;
+    img.alt = id;
+    if (!color) img.classList.add('non_color');
+
+    node.append(img, title);
+
+    node.addEventListener('click', () => {
+        if (pressing.ctrl) {
+            return window.open('?' + id, '_blank');
+        }
+        
+        if (id.startsWith('https://')) location.href = id;
+        else switchPage(id);
+    });
+
+    tooltip($(node), description);
+    $(`.cardsContainer[sec="${section}"]`).append(node);
     
     //                \\
     
-    let listNode = $(`<li>${name}</li>`);
+    const listNode = $(`<li>${name}</li>`);
     
-    listNode.bind('click', function() {
-        switchPage(id, data.skipSearch);
-    });
+    listNode.bind('click', () => switchPage(id));
+
     $('.gens ul').append(listNode);
 }
-function separate() {
-    $('.gens ul li:last-child').attr('style', 'border-bottom: 2px solid var(--color-subtle_text)');
-}
-let tooltipSize = {
+const tooltipSize = {
     width  : 0,
     height : 0
 }
-function tooltip(node, text, delay=0) {
-    let isHover = false;
-    let timeout;
-    node.hover(function (e) {
-        tooltipSize.width = $('.tooltip').width();
-        tooltipSize.height = $('.tooltip').height();
-
-        timeout = setTimeout(() => {
-                $('.tooltip').removeClass('hidden');
-                $('.tooltip span').html(text);
-            }, delay);
-
-            isHover = true;
-        }, function () {
-            hideToolTip();
-            $('.tooltip').removeClass('wide');
-            clearTimeout(timeout);            
-            isHover = false;
-        }
-    );
-    return node;
-}
-function hideToolTip() {
-    $('.tooltip').addClass('hidden');
-}
+Object.assign(window, {
+    tooltip(node, text, delay=0) {
+        let isHover = false;
+        let timeout;
+        node.hover(function (e) {
+            tooltipSize.width = $('.tooltip').width();
+            tooltipSize.height = $('.tooltip').height();
+    
+            timeout = setTimeout(() => {
+                    $('.tooltip').removeClass('hidden');
+                    $('.tooltip span').html(text);
+                }, delay);
+    
+                isHover = true;
+            }, function () {
+                hideToolTip();
+                $('.tooltip').removeClass('wide');
+                clearTimeout(timeout);            
+                isHover = false;
+            }
+        );
+        return node;
+    },
+    hideToolTip() {
+        $('.tooltip').addClass('hidden');
+    }
+});
 if (location.search.length > 1) {
     switchPage( location.search.substr(1) );
 }
 
-function load() {
-    tooltip($('header h2'), 'yo mama', 5000);
-    $('.loadingScreen').remove();
-
-    // Pass mouse pos into css
-    $(document.body).mousemove(function (e) { 
-        e.clientX = Math.clamp( e.clientX, 0, window.innerWidth -  (tooltipSize.width  + 45) );
-        e.clientY = Math.clamp( e.clientY, 0, window.innerHeight - (tooltipSize.height + 45) );
-        $(":root")[0].style.setProperty('--mouse-x', e.clientX+'px');
-        $(":root")[0].style.setProperty('--mouse-y', e.clientY+'px');
-    });
-    animate();
+function addDividerLine() {
+    $('.gens ul li:last-child').attr('style', 'border-bottom: 2px solid var(--color-subtle_text)');
 }
-function links() {
+function initPages() {
     $('.gens ul').empty();
 
-    link({
+    addPage({
         name: tl('page.javamath'),
         id: "JavaMath",
         icon: "/assets/javamath.svg",
         description: tl('page.javamath.desc'),
+        section: "datapack",
+        info: tl("page.javamath.info"),
+        scripts: [
+            {
+                src: 'https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js',
+                integrity: 'sha512-PRRHSwgn8QJinp43y5B698YK/FApqSvwmd7kVu8NWMksCl/3daKnNbPNWPuGKDrpIIb+0Dg5W55VSbZi0QG60Q==',
+                crossorigin:'anonymous',
+                referrerpolicy: 'no-referrer'
+            },
+            {
+                src: '/content/JavaMath/main.js',
+                type: 'module'
+            }
+        ]
     });
-    separate();
-    link({
+    addDividerLine();
+    addPage({
         name: 'MGens',
-        id: 'MGens',
+        id: 'https://malik12tree.github.io/MGens/',
         icon: "/assets/m.svg",
         description: tl('page.mgens.desc'),
-        sec: "mgens",
-        skipSearch:true,
+        section: "mgens",
         color: true
     });
-    link({
+    addPage({
         name: tl('page.midinoteblock'),
-        id: 'MGens/MidiNoteBlock',
+        id: 'https://malik12tree.github.io/MGens/pages/datapack_gens/midi-to-noteblocks/midi-to-noteblocks.html',
         icon: "/assets/graphic_eq.svg",
         description: tl('page.midinoteblock.desc'),
-        sec: "mgens",
-        skipSearch:true
+        section: "mgens"
     });
-    link({
+    addPage({
         name: tl('page.particledraw'),
-        id: 'MGens/ParticleDraw',
+        id: 'https://malik12tree.github.io/MGens/pages/datapack_gens/particle-draw/particle-draw.html',
         icon: "/assets/brush.svg",
         description: tl('page.particledraw.desc'),
-        sec: "mgens",
-        skipSearch:true
+        section: "mgens"
     });
 }
+
+
+// Loaded
+$("#home").bind('click', () => switchPage('Home'))
+$('.loadingScreen').remove();
+
+// Pass mouse pos into css
+$(document.body).mousemove(function (e) { 
+    e.clientX = Math.clamp( e.clientX, 0, window.innerWidth -  (tooltipSize.width  + 45) );
+    e.clientY = Math.clamp( e.clientY, 0, window.innerHeight - (tooltipSize.height + 45) );
+    $(":root")[0].style.setProperty('--mouse-x', e.clientX+'px');
+    $(":root")[0].style.setProperty('--mouse-y', e.clientY+'px');
+});
+})();

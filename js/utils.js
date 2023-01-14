@@ -22,3 +22,9 @@ function selectElement(element) {
 function downloadFile(name, content) {
     saveAs(new Blob([content], {type: "text/plain;charset=utf-8"}), name);
 }
+
+const escape = document.createElement('textarea');
+function escapeHTML(html) {
+    escape.textContent = html;
+    return escape.innerHTML;
+}

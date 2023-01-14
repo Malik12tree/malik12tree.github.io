@@ -65,8 +65,8 @@ class CodeView {
     maximize(){
         this.node.removeClass('minimized');
         this.node.addClass('maximized');
-        $(':root')[0].style.setProperty('--prop-codeview_width', '95%');
-        $(':root')[0].style.setProperty('--prop-codeview_height', '80%');
+        $(':root')[0].style.setProperty('--prop-codeview_width', '100%');
+        $(':root')[0].style.setProperty('--prop-codeview_height', '100%');
     }
     minimize(){
         this.node.removeClass('maximized');

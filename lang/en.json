@@ -14,6 +14,7 @@
     
     "page.javamath": "Java Math",
     "page.javamath.desc": "convert math equations into mcfunction form. also includes variable support!",
+    "page.javamath.info": "- Using <code>[&#60;command&#62;]</code> would be considered as the result of the command. For example <code>[time query gametime]</code> would substitute into the game time in ticks.<br><br>- Math functions are not yet supported.",
     "page.mgens.desc": "the actual website.",
     "page.midinoteblock": "MIDI To Note Blocks",
     "page.midinoteblock.desc": "convert MIDI files into noteblocks packed in mcfunctions!",
@@ -26,9 +27,9 @@
     "javamath.action.empty_variables": "empty variables",
     
     "javamath.prop.equation": "Equation",
-    "javamath.prop.mastersb": "Master Scoreboard",
-    "javamath.prop.oplabel": "Operation Label",
-    "javamath.prop.fractional_precision": "Fractional Precision",
+    "javamath.prop.mastersb": "Scoreboard",
+    "javamath.prop.oplabel": "Operation",
+    "javamath.prop.fractional_precision": "Precision",
     "javamath.prop.fractional_precision.desc": "Determines the accuracy of floating numbers.<br> This means that variables' last <code>N</code> digits are treated as floating points.",
     "javamath.prop.variables": "Variables"
 }
