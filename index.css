@@ -200,7 +200,7 @@ li {
     outline: 1px solid var(--color-subtle_text);
     background-color: var(--color-ui);
     padding: 2px;
-    z-index: 16;
+    z-index: 99999999;
 }
 .tooltip.wide {
     /* left: 50%;
