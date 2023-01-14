@@ -1,70 +1,29 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.1/math.js"></script>
-
 <div class="pageCenter">
-    <table>
-        <tr>
-            <td trnslt='javamath.prop.equation+: '>Equation: </td>
-            <td> 
-                <span class="errorInput" style="position: absolute;transform: translateY(-100%);margin-top: -5px;"></span> 
-                <input type="text" spellcheck="false" class="inputForm" value=""> 
-                <br>
-            </td>
-        </tr>
-        <tr>
-            <td trnslt='javamath.prop.mastersb+: '>Master Scoreboard: </td>
-            <td><input type="text" spellcheck="false" class="inputForm" value="math" id="masterSB"> </td>
-        </tr>
-        <tr>
-            <td trnslt='javamath.prop.oplabel+: '>Operation Label: </td>
-            <td><input type="text" spellcheck="false" class="inputForm" value="#op%index%" id="opLabel"> </td>
-        </tr>
-        <tr>
-            <td trnslt='javamath.prop.fractional_precision+: '>Fractional Precision: </td>
-            <td>
-                <input id="fpInp" type="range" class="inputForm" value="2" min="0" max="3" oninput="fpLabel.innerText=this.value" style="width: 90%;"> 
-                <span id="fpLabel" style="position: absolute;margin-top: -3px;">2</span>
-            </td>
-            <td><info>Determines the accuracy of floating numbers.</info></td>
-        </tr>
-        <tr>
-            <td>Scale Variables: </td>
-            <td>
-                <input id="vrscale" type="checkbox"> 
-            </td>
-            <td>
-                <info>If false, the last digits of input variables will be considered as floating numbers, this will produce accuracte results.
-                <br>
-                ( Where the last digits are based on the fractional precision )
-                </info>
-        </td>
-        </tr>
-        <tr>
-            <td trnslt='javamath.prop.variables+: '>Variables: </td>
-            <td>
-                <div class="toolbar">
-                    <img class="tool" src="/assets/add.svg" onload="tooltip($(this), tl('javamath.action.add_sb.desc'));">
-                    <!-- <img class="tool" src="/assets/upload_file.svg" onload="tooltip($(this), tl('javamath.action.load_sb.desc'));"> -->
-                    <img class="tool" src="/assets/delete.svg" onload="tooltip($(this), tl('generic.empty+ +javamath.prop.variables'));">
-                </div>
-                <div class="sbVariables"></div>
-            </td>
-        </tr>
-    </table>
-    <script>
-        if (location.href == 'http://127.0.0.1:5500/?JavaMath') {
-            $('.pageCenter table:first-child').append(`<tr> <td>JavaScript Mode: </td> <td><input type="checkbox" id="debugMode"> </td> </tr>`)                
-        }
-    </script>
-    <div class="tothemoreyouknow">
+<!--     <div class="tothemoreyouknow">
         <div>
-            <h4 m>For The More You Know</h4>
+            <h4 m>The more you know</h4>
         </div>
         <ul>
             <li>Using <code>[&#60;command&#62;]</code>would be considered as the result of the command. <br> For example <code>[time query gametime]</code> would substitute into the game time in ticks.</li>
             
         </ul>
         ...
-    </div>
+    </div> -->
 </div>
 
-<script src="/content/JavaMath/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.js" integrity="sha512-PRRHSwgn8QJinp43y5B698YK/FApqSvwmd7kVu8NWMksCl/3daKnNbPNWPuGKDrpIIb+0Dg5W55VSbZi0QG60Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="/content/JavaMath/main.js" type="module"></script>
+
+<style>
+    .form {
+        width: 60%;
+        margin: auto;
+    }
+    @media screen and (max-width: 975px) {
+        .form {
+            width: 90%;
+        }
+    }
+
+</style>

@@ -1,16 +1,14 @@
-let templates = {
-    'info': function(elemenet) {
-        let node = $(`<img src="/assets/question_mark.svg" class="ignore"/>`);
+const templates = {
+    'info': function(element) {
+        const node = $(`<img src="/assets/question_mark.svg" class="ignore"/>`);
         node.on('dblclick', function(e) {
             $('.tooltip').addClass('wide')
         })
-        return tooltip(node, elemenet.innerHTML+'<br><br>Tip: double click for wide view.');
+        return tooltip(node, element.innerHTML+'<br><br>Tip: double click to widen.');
     }
 }
 
-MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-
-var observer = new MutationObserver(function() {
+const observer = new (window.MutationObserver || window.WebKitMutationObserver)(function() {
     
     for (const key in templates) {
         $(key).each(function() {

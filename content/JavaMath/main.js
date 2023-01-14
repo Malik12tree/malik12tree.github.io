@@ -1,466 +1,399 @@
-window.scope = (function() {
-if (window.math == undefined) {
-    requestAnimationFrame(window.scope);
-    return;
-}
-let mcf = '';
-let mcc = '';
+(async function () {
+await new Promise((resolve, reject) => {
+  const loop = () => 'math' in window ? resolve(math) : setTimeout(loop, 10)
+  loop();
+});
 
-// function compileJavaMath() {
-//     let str = '';
-//     mcc.replaceAll(' %sb%', '').replaceAll('%calc% ', '').replaceAll('#', '').split('\n').forEach(line => {
-//         let isSet = false;
-//         line = line.replace(/((.)+)\^\=(\s+)?/g, '$1=$1**');
-//         if (line.startsWith('%set%')) {
-//             let args = line.split(' ');
-//             line = 'let ' + args[1] + ' = ' + args[2];
-//             isSet = true;
-//         }
-//         str += line+'\n';
-//         if (!isSet && line != ''){
-//             let args = line.split(' ');
-//             str+= `${args[0]} = Math.floor(${args[0]})\n`;
-//         }
-//     });
+const form = new Form({
+    form: {
+        equation: { label: "javamath.prop.equation", type: "text", value: 'a / b' },
+        masterScoreboard: { label: "javamath.prop.mastersb", type: "text", value: "math" },
+        operationLabel: { label: "javamath.prop.oplabel", type: "text", value: "#op%index%" },
+        fractionalPrecision: { label: "javamath.prop.fractional_precision", type: "range", min: 0, max: 3, info: "javamath.prop.fractional_precision.desc" },
+        variables: { label: "javamath.prop.variables", type: "node", builder({trigger}) {
 
-//     return str;
-// }
-
-function addMCLine(line) {
-    return mcf += '\n'+line;
-}
-function cutNumberFP(value) {
-    return value;
-}
-function addMCConstant(value, isSpecial) {
-    let line = `scoreboard players set #${isSpecial ? 'precision': cutNumberFP(value)} %sb% ${value}`;
-    if (!mcf.includes(line)) {
-        addMCLine(line);
-    }
-    return mcf;
-}
-function isSingle(node) {
-    if (!node) return false;
-    return ['value','name'].includes(Object.keys(node)[0])||
-            ['value','name'].includes(Object.keys(node)[1])
-}
-
-function getConstant(node) {
-    if (isSingle(node)) return null;
-    if (isSingle(node.args[0]) && isSingle(node.args[1])) {
-        return node.args;
-    }
-    return null;
-}
-function getMixed(node) {
-    if (isSingle(node)) return null;
-
-    if ( isSingle(node.args[0]) && !isSingle(node.args[1]) ||
-        isSingle(node.args[1]) && !isSingle(node.args[0]) ) {
-        
-        if (isSingle(node.args[0])) {
-            return {
-                ct: node.args[0],
-                vr: node.args[1],
-                order: 0,
-            }
-        } else {
-            return {
-                ct: node.args[1],
-                vr: node.args[0],
-                order: 1
-            }
-        }
-    }
-
-    return null;
-}
-function getVariable(node) {
-    if (isSingle(node)) return null;
-    if (!isSingle(node.args[0]) && !isSingle(node.args[1])) {
-        return node.args
-    }
-    return null;
-}
-function sampleScoreboardOf(node) {
-    if (node.name != undefined) {
-        if (/\$hash\$cmd\d+/.test(node.name)) {
-            return node.name + ' %sb%';
-        }
-        
-        let inps = $('.sbVariables').find('input');
-        let inp;
-        for (let i = 0; i < inps.length; i+=2) {
-            if(inps[i+1].value == sampleVariable(node.name,true)) {
-                inp = inps[i];
-                break;
-            }
-        }
-        if (inp) {
-            return node.name + ' ' + inp.value;
-        }
-        return node.name +' unknown';
-    } else {
-        return '#'+ cutNumberFP(node.value) + ' %sb%'
-    }
-}
-
-let symbols = [
-    ['#','$hash$'],
-    ['.','$dot$'],
-    [',','$comma$'],
-    ['=','$equal$'],
-    ['<','$lessthan$'],
-    ['>','$greaterthan$'],
-    ['&','$ampersand$'],
-    ['!','$not$'],
-    ['@','$at$'],
-    // ['%','$percent$'],
-    ['~','$tilde$']
-]
-function sampleVariable(name, inverse=false) {
-    symbols.forEach(symbol => {
-        if (!inverse) {
-            name = name.replaceAll(symbol[0],symbol[1]);
-        } else {
-            name = name.replaceAll(symbol[1],symbol[0]);
-        }
-    });
-    return name;
-}
-function sampleOperation(node) {
-    return $('#opLabel').val().replaceAll('%index%', node.index);
-}
-function addFn(node, ...args) {
-    let str='\n';
-    
-    
-    args.forEach((arg,i) => {
-        if (!arg) return;
-        
-        if (arg.value !== undefined) {
-            str += `%set% in${i||''} %sb% = ${arg}\n`;
-        } else {
-            str += `%calc% in${i||''} %sb% = ${sampleScoreboardOf(arg)}\n`;
-        }
-    });
-    let name = node.fn=='pow' ? 'power': node.fn;
-    str += `function ${getMCFPath()}utils/${name}\n`;
-    str += `%calc% ${sampleOperation(node)} = .out math\n\n`;
-    mcc=str+mcc;
-
-}
-function isFn(node) { 
-    return node.op == '^' || typeof node.fn === 'object';
-}
-let simplificationRules = [
-     // a * b
-    {
-        type: 'operate',
-        pattern: /((?<=\s)|^)(?<left>\d+)\*(?<right>\d+)/,
-        operate: '*'
-    },
-     // (a + b)
-    {
-        type: 'operate',
-        pattern: /\((\s+)?(?<left>\d+)(\s+)?\+(\s+)?(?<right>\d+)(\s+)?\)/,
-        operate: '+'
-    },
-     // (a - b)
-    {
-        type: 'operate',
-        pattern: /\((\s+)?(?<left>\d+)(\s+)?\-(\s+)?(?<right>\d+)(\s+)?\)/,
-        operate: '-'
-    },
-     // (a) => a
-    {
-        type: 'replace',
-        pattern: /\((((?![\*\+\-\/\%\^]).)+)\)/,
-        source: '$1',
-    },
-     // a^2 =
-    {
-        type: 'replace',
-        pattern: /\((((?![\*\+\-\/\%\^]).)+)\)/,
-        source: '$1',
-    },
-]
-function simplify(statement) {
-
-    // pass 1
-    for (let i = 0; i < simplificationRules.length; i++) {
-        const rule = simplificationRules[i];
-        
-        let match = statement.match(rule.pattern);
-        switch (rule.type) {
-            case 'operate':
-                while (match) {
-                    statement = statement.replace(match[0], Math.floor(eval(`parseInt(match.groups.left)${rule.operate}parseInt(match.groups.right)`)))
-                    match = statement.match(rule.pattern);
+            const wrapper = document.createElement('div');
+            wrapper.style.flex = 1;
+            wrapper.append(buildToolBar([
+                {
+                    icon: "/assets/add.svg",
+                    description: "javamath.action.add_sb.desc",
+                    click: () => {
+                        addScore(undefined, undefined, trigger);
+                        trigger();
+                    }
+                },
+                {
+                    icon: "/assets/delete.svg",
+                    description: "javamath.action.empty_variables",
+                    click: () => {
+                        $('.variables').empty();
+                        hideToolTip();
+                        trigger();
+                    }
                 }
-                break;
-            case 'replace':
-                statement = statement.replace(rule.pattern, rule.source)
-        }
-    }
+            ]));
+            const variableWrapper = document.createElement('div');
+            variableWrapper.classList.add('variables');
 
-    return statement;
-}
-const CMD_PATTERN = /\[(((?![\[\]]).)+)\]/;
-function createCommandsMap(statement) {    
-    let match = statement.match(CMD_PATTERN);
-    let i = 0;
-    while (match) {
-        mcf+= `execute store result score #cmd${i} %sb% run ${match[1]}\n`;
-        statement = statement.replace(match[0], '#cmd'+i);
+            wrapper.append(variableWrapper);
+            return wrapper;
+        } },
+    },
+    onChange() {
+        updateCode();
+    }
+});
+
+$('.pageCenter').prepend(form.node);
+
+class MinecraftMathParser {
+    constructor() {
+        this.headerCode = '';
+        this.bodyCode = '';
+        this.scoreboard = 'math';
+        this.fractionalPrecision = 2;
+    }
+    __index = 0;
+    currentGroup = "";
+    isGroupActive = false;
+
+    setupTree(node, _isRoot = true) {
+        if (_isRoot) this.__index = 0;
         
-        match = statement.match(CMD_PATTERN);
-        i++;
-    }
-    return statement;
-}
-function variableScalar(statement, variable) {
-    if ($('#fpInp').val() == '0') return statement;
-    if (variable.name === undefined) return statement;
+        const args = node.args;
+        if (!args) return;
 
-    if ($('#vrscale')[0].checked && variable.isScaled)
-        return `%calc% ${sampleScoreboardOf(variable)} *= #precision %sb%\n${statement}%calc% ${sampleScoreboardOf(variable)} /= #precision %sb%\n`;
+        node.index = this.__index++;
 
-    if (!$('#vrscale')[0].checked && !variable.isScaled)
-        return `%calc% #temp %sb% = ${sampleScoreboardOf(variable)}\n%calc% #temp %sb% /= #precision %sb%\n${
-            statement.replace(" "+sampleScoreboardOf(variable), " #temp %sb%")
-        }`;
+        for (let i = 0; i < args.length; i++) {
+            args[i] = args[i].content || args[i];
 
-    return statement;
-}
-function parseStatement(statement, options = {}) {
-    mcf='';
+            if ('value' in args[i]) args[i].value = Math.round(args[i].value * this.fractionalPrecision);
 
-    const orignalStatement = statement;
-    if (statement.match(/[0-9]\.[0-9]/g)) {
-        // throw new TypeError('Decimals are against minecraft rules.')
-    }
-    
-    statement = sampleVariable(simplify(createCommandsMap(statement)), false).replaceAll(/(?<=\d)\$dot\$(?=\d)/g, '.');
-    
-    mcf = `# Statement is: ${orignalStatement}\n# Compiled as : ${statement}\nscoreboard objectives add %sb% dummy\n`+mcf;
-    
-    mcc = '';
-    if (options.onlylog) return;
-    
-    let tree = math.parse(statement);
-    if (tree.content) tree = tree.content;    
-    let i = 0;
-    let fractional_precision = 10**parseInt($('#fpInp').val());
-    addMCConstant(fractional_precision, true)
-
-    function setupTree(node) {
-        node.index = i++;
-
-        if (node.args) {
-            
-            if ((node.op == '*' || node.op == '/') && getConstant(node)) {
-                node.args[0].isScaled = true;
-            }
-            for (let i = 0; i < node.args.length; i++) {
-                if (node.args[i].content) {
-                    node.args[i] = node.args[i].content;
-                }
-
-                if ((node.op == '+' || node.op == '-') && isSingle(node.args[i])) {
-                    node.args[i].isScaled = true;
-                }
-                if (node.args[i].isScaled && node.args[i].value) {
-                    node.args[i].value = Math.round(node.args[i].value*fractional_precision);
-                }
-                
-                setupTree(node.args[i]);
-            }
+            this.setupTree(args[i], false);
         }
     }
-    setupTree(tree);
-    
-    
-    function populate(node) {
-        let isfn = isFn(node);
-        let constant = getConstant(node);
-        let mixed = getMixed(node);
-        let variable = getVariable(node);
+    isVariable(node, index = -1) {
+        return index == -1 ? node.name: node.args[index].name != undefined;
+    }
+    isConstant(node, index = -1) {
+        return index == -1 ? node.value: node.args[index].value != undefined;
+    }
+    addIfConstant(node, index = -1) {
+        if (this.isConstant(node, index)) {
+            this.addConstant(index == -1 ? node.value: node.args[index].value);
+        }
+    }
 
+    populate(node) {
+        const { getOperation } = this;
+
+        const isfn = this.isFn(node);
+        const constantWithConstant = this.getConstantWithConstant(node);
+        const constantWithOperation = this.getConstantWithOperation(node);
+        const operationWithOperation = this.getOperationWithOperation(node);
+        const operation = getOperation(node);
+
+        this.startGroup();
         if (isfn) {
-            console.log(node);
             throw new SyntaxError('Support of math functions is still in development!')
             // addFn(node, ...node.args);
-        } else if(constant) { // a := b
-            let str = '';
-            if (node.args[0].name !== undefined) {
-                // Is variable
-                str += variableScalar(`%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(node.args[0])}\n`, node.args[0])
-            } else {
-                // Is number
-                str += `%set% ${sampleOperation(node)} %sb% ${node.args[0]}\n`
-            }
-            if (node.args[1].value !== undefined) {
-                addMCConstant(node.args[1]);
-            }
-            str += variableScalar(`%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleScoreboardOf(node.args[1])}\n`, node.args[1]);
-            mcc = str+mcc;
-            
-        } else if(mixed) { // op(n) := a
-            let str = '';
-            if (mixed.order) {
-                if (mixed.ct.value != undefined) {
-                    addMCConstant(mixed.ct);
-                }
-                str += variableScalar(`execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(mixed.vr)} %sb% ${node.op}= ${sampleScoreboardOf(mixed.ct)}\n`,mixed.ct);
-            } else {
-                if (mixed.ct.name !== undefined) {
-                    str = variableScalar(`\n%calc% ${sampleOperation(node)} %sb% = ${sampleScoreboardOf(mixed.ct)}\n`,mixed.ct);
-                } else {
-                    str = `%set% ${sampleOperation(node)} %sb% ${mixed.ct}\n`;
-                }
-                str += `%calc% ${sampleOperation(node)} %sb% ${node.op}= ${sampleOperation(mixed.vr)} %sb%\n`;
-            }
-            
-            mcc = str+mcc;
-        } else if(variable) { // op(n) := op(m)
-            
-            mcc = `execute store result score ${sampleOperation(node)} %sb% run %calc% ${sampleOperation(variable[0])} %sb% ${node.op}= ${sampleOperation(variable[1])} %sb%\n`
-                  +mcc;
+
         }
-        if (node.args) {
-            node.args.forEach(populate);
+        else if (constantWithConstant) { // a := b
+            if (this.isVariable(node, 0)) {
+                
+                this.addLine(`%calc% ${operation} %sb% = ${this.addScoreboardByVariable(node.args[0])}`);
+
+            } else {
+                
+                this.addLine(`%set% ${operation} %sb% ${node.args[0]}`);
+
+            }
+            
+            this.addIfConstant(node, 1);
+
+            this.addLine(
+                this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${this.addScoreboardByVariable(node.args[1])}`, node)
+            );
+
+        } else if (constantWithOperation) { // op(n) := a
+            
+            this.addIfConstant(constantWithOperation.variable);
+
+            if (constantWithOperation.order) {
+                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${getOperation(constantWithOperation.operation)} %sb% ${node.op}= ${this.addScoreboardByVariable(constantWithOperation.variable)}`, node));
+            } else {
+                this.addLines(
+                    `%set% ${operation} %sb% ${constantWithOperation.variable}`,
+
+                    this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${getOperation(constantWithOperation.operation)} %sb%`, node)
+                );
+            }
+            
+        } else if (operationWithOperation) { // op(n) := op(m)
+
+            this.addLine(`execute store result score ${operation} %sb% run %calc% ${getOperation(operationWithOperation[0])} %sb% ${node.op}= ${getOperation(operationWithOperation[1])} %sb%`)
         }
+        this.endGroup();
+
+
+        if (!node.args) return;
+        node.args.forEach(child => this.populate(child));
     }
-    populate(tree);
+    parse(equation) {
+        this.headerCode = '';
+        
+        equation = this.quoteVariable(this.parseCommands(equation), false).replaceAll(/(?<=\d)\$dot\$(?=\d)/g, '.');
+
+        this.headerCode = `# ${equation}\nscoreboard objectives add %sb% dummy\n\n` + this.headerCode;
+
+        this.bodyCode = '';
+
+        let tree = math.parse(equation);
+        if (tree.content) tree = tree.content;
+
+        this.fractionalPrecision = 10 ** form.get('fractionalPrecision');
+        this.addConstant(this.fractionalPrecision, true);
+
+        this.setupTree(tree);
+        this.populate(tree);
+
+        this.addLine(`%calc% .out %sb% = ${this.getOperation({ index: 0 })} %sb%`, true);
+        
+        const code = this.headerCode + '\n' + '\n' + this.bodyCode;
+
+        return this.quoteVariable(
+            // .replace('%%%', result)
+            code
+                .replaceAll('%set%', 'scoreboard players set')
+                .replaceAll('%calc%', 'scoreboard players operation')
+                .replaceAll('%sb%', this.scoreboard),
+            true
+        );
+    }
+    addHeader(line) {
+        this.headerCode += line + '\n';
+    }
+    startGroup() {
+        this.currentGroup = "";
+        this.isGroupActive = true;
+    }
+    endGroup() {
+        this.isGroupActive = false;
+        this.currentGroup && this.addLine(this.currentGroup + '\n');
+    }
+    addLine(line, toLast) {
+        if (this.isGroupActive) {
+            return this.currentGroup += line + '\n';
+        }
+
+        if (toLast) return this.bodyCode += '\n' + line;
+
+        return this.bodyCode = line + this.bodyCode;
+    }
+    addLines(...lines) {
+        lines.forEach(line => this.addLine(line));
+    }
+    addConstant(value, isSpecial) {
+        const line = `scoreboard players set #${isSpecial ? 'precision' : value} %sb% ${value}`;
+
+        if (this.headerCode.includes(line)) return;
+
+        this.addHeader(line);
+    }
+    isSingle(node) {
+        if (!node) return false;
+        return 'value' in node || 'name' in node;
+    }
+    getConstantWithConstant(node) {
+        if (this.isSingle(node)) return null;
+        if (this.isSingle(node.args[0]) && this.isSingle(node.args[1])) {
+            return node.args;
+        }
+        return null;
+    }
+    getConstantWithOperation(node) {
+        if (this.isSingle(node)) return null;
+
+        if (this.isSingle(node.args[0]) && !this.isSingle(node.args[1]) ||
+            this.isSingle(node.args[1]) && !this.isSingle(node.args[0])) {
+
+            if (this.isSingle(node.args[0])) {
+                return {
+                    variable: node.args[0],
+                    operation: node.args[1],
+                    order: 0,
+                }
+            } else {
+                return {
+                    variable: node.args[1],
+                    operation: node.args[0],
+                    order: 1
+                }
+            }
+        }
+
+        return null;
+    }
+    getOperationWithOperation(node) {
+        if (this.isSingle(node)) return null;
+        if (!this.isSingle(node.args[0]) && !this.isSingle(node.args[1])) {
+            return node.args;
+        }
+        return null;
+    }
+    addScoreboardByVariable(node) {
+        if (!node.name) return '#' + node.value + ' %sb%';
+        if (/\$hash\$cmd\d+/.test(node.name)) node.name + ' %sb%';
+        
+        const inputs = $('.variables').find('input');
+
+        const quotedName = this.quoteVariable(node.name, true);
+
+        let scoreboard = "unknown";
+        for (let i = 0; i < inputs.length; i += 2) {
+            if (inputs[i + 1].value != quotedName) continue;
+
+            scoreboard = inputs[i].value;
+            break;
+        }
+
+        return node.name + ' ' +scoreboard;
+    }
+    isFn(node) {
+        return node.op == '^' || typeof node.fn === 'object';
+    }
+    quotedBySymbol = {
+        '#': '$hash$',
+        '.': '$dot$',
+        ',': '$comma$',
+        '=': '$equal$',
+        '<': '$lessthan$',
+        '>': '$greaterthan$',
+        '&': '$ampersand$',
+        '!': '$not$',
+        '@': '$at$',
+        // '%':':percent$',
+        '~': '$tilde$'
+    }
+    quoteVariable(name, inverse = false) {
+        const { quotedBySymbol } = this;
+        
+        if (inverse) {
+            for (const symbol in quotedBySymbol) {
+                const quotedSymbol = quotedBySymbol[symbol];
+
+                name = name.replaceAll(quotedSymbol, symbol);
+            }
+            return name;
+        }
+
+        let quotedName = '';
     
-    populate=null;
-    setupTree=null;
-
-    if (mcc) {
-        mcc += `\n%calc% .out %sb% = ${sampleOperation({index:0})} %sb%`;
+        for (let i = 0; i < name.length; i++) {
+            const char = name[i];
+            quotedName += quotedBySymbol[char] || char;
+        }
+        return quotedName;
     }
-    mcf += '\n\n'+mcc;
-    return mcf = sampleVariable(
-        // .replace('%%%', result)
-        mcf
-        .replaceAll('%set%', 'scoreboard players set')
-        .replaceAll('%calc%', 'scoreboard players operation')
-        .replaceAll('%sb%', options.sb||'math'),
-        true
-    )
+    getOperation(node) {
+        return form.get('operationLabel').replaceAll('%index%', node.index);
+    }
+    parseCommands(equation) {
+        let match;
+        let i = 0;
+        
+        while (match = equation.match(/\[(((?![\[\]]).)+)\]/)) {
 
+            this.addHeader(`execute store result score #cmd${i} %sb% run ${match[1]}`);
 
+            equation = equation.replace(match[0], '#cmd' + i);
+            i++;
+        }
+        return equation;
+    }
+    inverseOperationsMap = {
+        '/': '*',
+        '*': '/'
+    }
+    scaleOperation(line, node) {
+        if (form.get('fractionalPrecision') == 0) return line;
+        const inverseOperation = this.inverseOperationsMap[node.op];
+
+        if (inverseOperation) {
+            line += `\n%calc% ${this.getOperation(node)} %sb% ${inverseOperation}= #precision %sb%`;
+        }
+
+        return line;
+    }
 }
-function getMCFPath() {
-    let namespace = $("#namespaceinp").val() + ':';
-    let path = $("#pathinp").val();
-    if (path) path += '/';
-    return namespace + path;
-}
-// HTML Stuff
-let equationInput = $('.inputForm');
-const INCLUDES_UTILS = /(\^)|(sin\(.+\))|(cos\(.+\))|(tan\(.+\))|(sqrt\(.+\))|(abs\(.+\))|(pow\(.+\))/g;
-const IS_UTIL = /\^|sin|cos|tan|sqrt|abs|pow/g;
+const parser = new MinecraftMathParser();
 
-// /\(\s?\d+\s?\*\s?\d\s?\)/g => ( a * b )
-
-let codeview = new CodeView({
-    content: parseStatement(equationInput.val()),
+const codeview = new CodeView({
+    content: '# ...',
     langs: ['mcfunction'],
-    // ondownload() {
-    //     let statement = equationInput.val();
-
-    //     if (!INCLUDES_UTILS.test(statement)) {
-    //         codeview.download();
-    //         return;
-    //     }
-        
-    //     var zip = new JSZip();
-    //     let namespacepath = $("#namespaceinp").val() + '/';
-    //     let relativePath = $("#pathinp").val();
-    //     if (relativePath) {
-    //         relativePath += '/';
-    //     }
-
-    //     let path = 'data/' + namespacepath + relativePath;
-
-    //     zip.file(path+'run.mcfunction', codeview.content);
-        
-
-    //     zip.generateAsync({type:"blob"}).then(function(content) {
-    //         saveAs(content, $("#namespaceinp").val());
-    //     });
-    // }
 }).init();
+codeview.node.addClass('stickleftbottom');
 
-codeview.node.addClass('stickleftbottom')
 $('.subBody').append(codeview.node);
 
 function updateCode() {
-    if (equationInput.val() == '') return;
-    
+    const equation = form.get('equation');
+    if (equation == '') return;
+
     try {
-        $('.errorInput').text('');
+        parser.scoreboard = form.get('masterScoreboard');
 
-        codeview.content = parseStatement(equationInput.val(), {
-            sb: $('#masterSB').val()
-        });
-        codeview.activeLang = ($('#debugMode')[0] && $('#debugMode')[0].checked ? "javascript": "mcfunction");
+        codeview.content = parser.parse(equation);
         codeview.update();
-    } catch (error) { $('.errorInput').text(error) }
+
+        form.setError('equation', '');    
+    } catch (error) {
+        form.setError('equation', error);
+    }
 }
-$('#fpInp').bind('change', updateCode);
-$('.pageCenter').bind('input', function(e) {
-    if (e.target.id == 'fpInp') return;
+
+function addScore(scoreboard, name, trigger) {
+    name ??= "";
+    scoreboard ??= form.get('masterScoreboard');
+
+    const score = document.createElement('div');
+    score.classList.add("sbForm");
+
+    const action = document.createElement('img');
+    action.classList.add('tool');
+    action.src = "/assets/delete.svg";
+
+    const objective = document.createElement('input');
+    objective.placeholder = tl('generic.objective');
+    objective.spellcheck = false;
+    objective.value = scoreboard;
+
+    const player = document.createElement('input');
+    player.placeholder = tl('generic.name');
+    player.spellcheck = false;
+    player.value = name;
     
-    updateCode();
-})
-let actions = $('.pageCenter .toolbar').children();
+    score.append(action, objective, player);
 
-$(actions[0]).bind('click', function() {
-    addScore();
-})
-$(actions[1]).bind('click', function() {
-    $('.sbVariables').empty();
-    $('.tooltip').addClass('hidden');
-})
-let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    tooltip($(action), tl('javamath.action.remove_sb.desc'))
 
-function addScore(sname='math', pname, dvalue=0) {
-    pname = pname || '.'+chars[$('.sbVariables').children().length % 52];
-    let score = $(`
-    <div class="sbForm">
-        <img class="tool" src="/assets/delete.svg" onload="tooltip($(this), tl('javamath.action.remove_sb.desc'));">
-        <label trnslt='generic.objective'>Objective:</label>
-        <input type="text" spellcheck="false" value=${sname}>
-        <label trnslt='generic.name'>Name:</label>
-        <input type="text" spellcheck="false" value=${pname}>
-        </div>`);
-        // <label trnslt='javamath.prop.dfvalue'>Default Value:</label>
-        // <input type="number" min="-4294967296" max="4294967296" value=${dvalue}>
-
-    score.find('img').bind('click', function() {
+    action.addEventListener("click", () => {
         score.remove();
-        $('.tooltip').addClass('hidden');
-    })
-    $('.tooltip').addClass('hidden');
-    
-    $('.sbVariables').append(score);
-}
-addScore();
-addScore();
-// scoreboard players set (.)+ (.)+/g
-// example visulized
-// (454 * (35 / 5) + 1) * 2 + 2 * 500
-// (454 * 7 + 1) * 2 + 2 * 500
-// (454 * 7 + 1) * 2 + 1000
-// (3178 + 1) * 2 + 1000
-// (3179) * 2 + 1000
-// 6358 + 1000
-// 7358
-// :)
+        hideToolTip();
+        trigger?.();
+    });
+    objective.addEventListener('input', () => trigger?.());
+    player.addEventListener('input', () => trigger?.());
 
-window.scope=null;
-});
-window.scope();
+    hideToolTip();
+
+    $('.variables').append(score);
+}
+
+addScore(undefined, "a", () => form.onChange());
+addScore(undefined, "b", () => form.onChange());
+form.onChange();
+})();

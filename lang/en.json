@@ -23,10 +23,12 @@
     "javamath.action.add_sb.desc": "define a score",
     "javamath.action.load_sb.desc": "load scores from mcfunction",
     "javamath.action.remove_sb.desc": "remove score",
-
+    "javamath.action.empty_variables": "empty variables",
+    
     "javamath.prop.equation": "Equation",
     "javamath.prop.mastersb": "Master Scoreboard",
     "javamath.prop.oplabel": "Operation Label",
     "javamath.prop.fractional_precision": "Fractional Precision",
+    "javamath.prop.fractional_precision.desc": "Determines the accuracy of floating numbers.<br> This means that variables' last <code>N</code> digits are treated as floating points.",
     "javamath.prop.variables": "Variables"
 }

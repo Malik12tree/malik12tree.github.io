@@ -75,7 +75,7 @@ function setTheme(theme) {
     $(':root').removeClass('dark-theme light-theme');
     $(':root').addClass(theme);
 }
-function getSystemTheme(params) {
+function getSystemTheme() {
     let isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     return isDarkTheme ?  "dark-theme" : "light-theme";
 }
@@ -111,7 +111,7 @@ function switchPage(path, skipSearch=false) {
             preload[path.toLowerCase()].content
         );
    
-    $('.tooltip').addClass('hidden');
+    hideToolTip();
     page = path;
     if (!skipSearch) {
         search(path);
@@ -180,13 +180,16 @@ function tooltip(node, text, delay=0) {
 
             isHover = true;
         }, function () {
-            $('.tooltip').addClass('hidden');
+            hideToolTip();
             $('.tooltip').removeClass('wide');
             clearTimeout(timeout);            
             isHover = false;
         }
     );
     return node;
+}
+function hideToolTip() {
+    $('.tooltip').addClass('hidden');
 }
 if (location.search.length > 1) {
     switchPage( location.search.substr(1) );

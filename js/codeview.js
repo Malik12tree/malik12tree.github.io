@@ -227,6 +227,6 @@ let Highlighers = {
                 return HLUtils.is(ab, ...Highlighers.javascript.keyword) || HighlighersData.all.isOp(af);
             }
         ],
-        applyRules(arg){ return arg}
+        applyRules(arg) {return arg}
     }
 }
