@@ -91,6 +91,10 @@ if (storedTheme) {
 
 // creating pages
 function switchPage(path) {
+    $('#page-info').hide();
+
+    if (path.startsWith('https://')) return location.href = path;
+
     $('title').text('Malik12tree | ' + path)
 
     $('.subBody').empty();
@@ -112,9 +116,7 @@ function switchPage(path) {
     if (!(path in pageMap)) return;
     
     const { info, scripts } = pageMap[path];
-    if (!info) {
-        return $('#page-info').hide();
-    }
+    
     $('#page-info').show();
     $('#page-info')[0].onclick = () => {
         new Dialog({
@@ -165,8 +167,7 @@ function addPage(data) {
             return window.open('?' + id, '_blank');
         }
         
-        if (id.startsWith('https://')) location.href = id;
-        else switchPage(id);
+        switchPage(id);
     });
 
     tooltip($(node), description);

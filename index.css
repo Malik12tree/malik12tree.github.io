@@ -23,9 +23,9 @@
 .light-theme {
     --color-code: hsl(0, 0%, 100%);
     --color-text: hsl(0, 0%, 0%);
-    --color-subtle_text: hsl(120deg 25% 25%);
-    --color-ui: hsl(0, 0%, 90%);
-    --color-dark_ui: hsl(0, 0%, 25%);
+    --color-subtle_text: rgb(35, 59, 35);
+    --color-ui: hsl(0, 0%, 97%);
+    --color-dark_ui: hsl(0, 0%, 75%);
     --color-back: hsl(0, 0%, 100%);
     --color-accent: hsl(205, 100%, 60%);
     --color-accent_translucent: hsla(205, 100%, 60%, 0.5);
@@ -200,7 +200,7 @@ li {
     outline: 1px solid var(--color-subtle_text);
     background-color: var(--color-ui);
     padding: 2px;
-    z-index: 99999999;
+    z-index: 16;
 }
 .tooltip.wide {
     /* left: 50%;
@@ -221,7 +221,7 @@ li {
     height: 100%;
     position: fixed;
     background-color: var(--color-dark_ui);
-    z-index: 20;
+    z-index: 48;
 }
 @keyframes spin {
     0% {
@@ -327,9 +327,6 @@ input[type="range"]::-moz-range-thumb {
     margin: 0;
 }
 .sbForm {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
     padding: 5px;
     font-size: .9em;
     position: relative;
@@ -338,6 +335,15 @@ input[type="range"]::-moz-range-thumb {
 }
 .sbForm input {
     font-size: .9em;
+    display: inline-block;
+    box-sizing: border-box;
+    width: 50%;
+}
+.sbForm img {
+    height: 20px;
+    margin-left: auto;
+    margin-bottom: 2px;
+    display: block;
 }
 .toolbar {
     height: 25px;
@@ -357,29 +363,10 @@ input[type="range"]::-moz-range-thumb {
     transform: scale(115%);
 
 }
-.sbForm img {
-    height: 20px;
-    margin-left: auto;
-    margin-bottom: 2px;
-}
 hr {
     border-color: var(--color-subtle_text);
 }
 
-
-.dialog {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    width: fit-content;
-    transform: translate(-50%, -50%);
-    background-color: var(--color-ui);
-    box-shadow: 0 0 20px black;
-    border-radius: 5px;
-    z-index: 32;
-    padding: 10px 10px;
-
-}
 /* (5*3 + 10 * #a + 20 * 30 + 50) + 5*3 + 10 * #a + 20 * 30 + 50 */
 ::-webkit-scrollbar {
     width: 7.5px;
@@ -422,7 +409,7 @@ hr {
     
     overflow: hidden;
 
-    z-index: 99;
+    z-index: 32;
 }
 .codeview .lines {
     height: calc(100% - 40px);
@@ -568,7 +555,7 @@ dialog {
     max-width: 500px;
 
     color: var(--color-text);
-    background-color: var(--color-dark_ui);
+    background-color: var(--color-back);
     
     border: none;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
@@ -580,6 +567,7 @@ dialog > .handle > span {
     flex: 1;
 }
 dialog > .handle {
+    user-select: none;
     display: flex;
 
     width: 100%;

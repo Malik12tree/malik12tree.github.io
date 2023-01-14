@@ -155,7 +155,7 @@ class Dialog extends Form {
 
 		element.addEventListener('click', event => {
 			if (event.target.nodeName === 'DIALOG') {
-				element.close();
+				this.hide();
 			}
 		});
 
@@ -171,6 +171,7 @@ class Dialog extends Form {
 	}
 	hide() {
 		this.node.remove();
+		this.node.close();
 		return this;
 	}
 	onConfirm() {}
