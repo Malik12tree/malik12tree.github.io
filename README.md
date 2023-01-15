@@ -1,12 +1,13 @@
 # Malik12tree
-Contains my projects, mainly minecraft java generators.
+My projects, mainly minecraft java tools.
 
 ## Libaries <3
-- Jquery
-- Math
-- FileSaver
+This project couldn't have been possible without these libraries:
+* [Jquery](https://github.com/jquery/jquery)
+* [Math.js](https://github.com/josdejong/mathjs)
+* [FileSaver.js](https://github.com/eligrey/FileSaver.js#readme)
 
 ## License
-Every code in this repo is licensed under the MIT License.
+This repository is licensed under the **MIT License**.
 <br>
-You need to contact me before using any code from this repository.
+Contact me before using code from this repository.
