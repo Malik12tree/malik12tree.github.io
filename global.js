@@ -2,6 +2,42 @@
 //
 // This file will be shared by all the pages
 
+// Theming
+const themes = ['dark_mode', 'light_mode'];
+let themeIndex = 0;
+
+$('#theme-selector').bind('click', function() {
+    themeIndex++;
+    themeIndex = themeIndex % 2;
+    localStorage.setItem('theme', themeIndex);
+    setTheme(themes[themeIndex]);
+
+    $('#theme-selector').attr('src', `/assets/${themes[themeIndex]}.svg`);
+})
+
+function setTheme(theme) {
+    if (theme == 'system') {
+        theme = getSystemTheme();
+    } else {
+        theme = theme.replace('_','-').replace('mode','theme');
+    }
+
+    $(':root').removeClass('dark-theme light-theme');
+    $(':root').addClass(theme);
+}
+function getSystemTheme() {
+    const isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return isDarkTheme ?  "dark-theme" : "light-theme";
+}
+const storedTheme = localStorage.getItem('theme');
+if (storedTheme) {
+    themeIndex = storedTheme;
+    setTheme(themes[themeIndex]);
+} else {
+    setTheme('dark-theme');
+}
+//
+
 const pressing = {
     ctrl: false,
     shift: false,
@@ -53,40 +89,6 @@ for (let i = 0; i < pageNames.length; i++) {
         path: page,
         content: content
     };
-}
-
-const themes = ['dark_mode', 'light_mode'];
-let themeIndex = 0;
-
-$('#theme-selector').bind('click', function() {
-    themeIndex++;
-    themeIndex = themeIndex % 2;
-    localStorage.setItem('theme', themeIndex);
-    setTheme(themes[themeIndex]);
-
-    $('#theme-selector').attr('src', `/assets/${themes[themeIndex]}.svg`);
-})
-
-function setTheme(theme) {
-    if (theme == 'system') {
-        theme = getSystemTheme();
-    } else {
-        theme = theme.replace('_','-').replace('mode','theme');
-    }
-
-    $(':root').removeClass('dark-theme light-theme');
-    $(':root').addClass(theme);
-}
-function getSystemTheme() {
-    const isDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return isDarkTheme ?  "dark-theme" : "light-theme";
-}
-const storedTheme = localStorage.getItem('theme');
-if (storedTheme) {
-    themeIndex = storedTheme;
-    setTheme(themes[themeIndex]);
-} else {
-    setTheme('dark-theme');
 }
 
 // creating pages
