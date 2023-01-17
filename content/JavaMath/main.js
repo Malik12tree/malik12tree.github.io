@@ -56,91 +56,27 @@ class MinecraftMathParser {
     __index = 0;
     currentGroup = "";
     isGroupActive = false;
-
-    setupTree(node, _isRoot = true) {
-        if (_isRoot) this.__index = 0;
-        
-        const args = node.args;
-        if (!args) return;
-
-        node.index = this.__index++;
-
-        for (let i = 0; i < args.length; i++) {
-            args[i] = args[i].content || args[i];
-
-            if ('value' in args[i]) args[i].value = Math.round(args[i].value * this.fractionalPrecision);
-
-            this.setupTree(args[i], false);
-        }
+    quotedBySymbol = {
+        '#': '$hash$',
+        '.': '$dot$',
+        '=': '$equal$',
+        '<': '$lessthan$',
+        '>': '$greaterthan$',
+        '&': '$ampersand$',
+        '!': '$not$',
+        '@': '$at$',
+        '~': '$tilde$'
     }
-    isVariable(node, index = -1) {
-        return index == -1 ? node.name: node.args[index].name != undefined;
+    inverseOperationsMap = {
+        '/': '*',
+        '*': '/'
     }
-    isConstant(node, index = -1) {
-        return index == -1 ? node.value: node.args[index].value != undefined;
-    }
-    addIfConstant(node, index = -1) {
-        if (this.isConstant(node, index)) {
-            this.addConstant(index == -1 ? node.value: node.args[index].value);
-        }
+    orderSpecificOperations = {
+        '/': true,
+        '-': true,
+        '%': true,
     }
 
-    populate(node) {
-        const isfn = this.isFn(node);
-        const constantWithConstant = this.getConstantWithConstant(node);
-        const constantWithOperation = this.getConstantWithOperation(node);
-        const operationWithOperation = this.getOperationWithOperation(node);
-        const operation = this.getOperation(node);
-
-        this.startGroup();
-        if (isfn) {
-            throw new SyntaxError('Math functions are not yet supported!')
-            // addFn(node, ...node.args);
-
-        }
-        else if (constantWithConstant) { // a := b
-            let leftSide;
-            if (this.isConstant(node, 0)) {
-
-                leftSide = `%set% ${operation} %sb% ${node.args[0]}`;
-
-            } else {
-                
-                leftSide = `%calc% ${operation} %sb% = ${this.addScoreboardByVariable(node.args[0])}`;
-
-            }
-            this.addLine(leftSide);
-            
-            this.addIfConstant(node, 1);
-
-            this.addLine(this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${this.addScoreboardByVariable(node.args[1])}`, node));
-
-        } else if (constantWithOperation) { // op(n) := a
-            
-            this.addIfConstant(constantWithOperation.variable);
-
-            const sideOperation = this.getOperation(constantWithOperation.operation);
-            
-            if (constantWithOperation.order) {
-                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${sideOperation} %sb% ${node.op}= ${this.addScoreboardByVariable(constantWithOperation.variable)}`, node));
-            } else {
-                this.addLines(
-                    `%set% ${operation} %sb% ${constantWithOperation.variable}`,
-
-                    this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${sideOperation} %sb%`, node)
-                );
-            }
-            
-        } else if (operationWithOperation) { // op(n) := op(m)
-
-            this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${this.getOperation(operationWithOperation[0])} %sb% ${node.op}= ${this.getOperation(operationWithOperation[1])} %sb%`, node));
-        }
-        this.endGroup();
-
-
-        if (!node.args) return;
-        node.args.forEach(child => this.populate(child));
-    }
     parse(equation) {
         this.headerCode = '';
         
@@ -154,7 +90,7 @@ class MinecraftMathParser {
         if (tree.content) tree = tree.content;
 
         this.fractionalPrecision = 10 ** form.get('fractionalPrecision');
-        this.addConstant(this.fractionalPrecision, true);
+        this.defineConstant(this.fractionalPrecision, 'precision');
 
         this.setupTree(tree);
         this.populate(tree);
@@ -172,8 +108,88 @@ class MinecraftMathParser {
             true
         );
     }
-    addHeader(line) {
-        this.headerCode += line + '\n';
+    setupTree(node, _isRoot = true) {
+        if (_isRoot) this.__index = 0;
+        
+        const args = node.args;
+        if (!args) return;
+
+        node.index = this.__index++;
+
+        for (let i = 0; i < args.length; i++) {
+            args[i] = args[i].content || args[i];
+
+            if ('value' in args[i]) args[i].value = Math.round(args[i].value * this.fractionalPrecision);
+
+            this.setupTree(args[i], false);
+        }
+    }
+    populate(node) {
+        const isfn = this.isFn(node);
+        const constantWithConstant = this.getParamterParamter(node);
+        const constantWithOperation = this.getParamterOperation(node);
+        const operationWithOperation = this.getOperationOperation(node);
+        const operation = this.getOperation(node);
+
+        this.startGroup();
+        if (isfn) {
+            throw new SyntaxError('Math functions are not yet supported!')
+            // addFn(node, ...node.args);
+
+        }
+        else if (constantWithConstant) { // a := b
+            this.defineLeftSideOfOperation(operation, constantWithConstant[0]);
+            
+            this.defineIfConstant(node, 1);
+
+            this.addLine(this.scaleOperation(
+                `%calc% ${operation} %sb% ${node.op}= ${this.withScoreboardByVariable(constantWithConstant[1])}`, node
+            ));
+
+        } else if (constantWithOperation) { // op(n) := a
+            
+            const sideOperation = this.getOperation(constantWithOperation.operation);
+            
+            if (node.op in this.orderSpecificOperations) {
+                
+                this.defineLeftSideOfOperation(operation, constantWithOperation.term);
+
+                this.addLine(this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${sideOperation} %sb%`, node));
+            } else {
+
+                this.defineIfConstant(constantWithOperation.term);
+                
+                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${sideOperation} %sb% ${node.op}= ${this.withScoreboardByVariable(constantWithOperation.term)}`, node));
+            }
+            
+        } else if (operationWithOperation) { // op(n) := op(m)
+
+            this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${this.getOperation(operationWithOperation[0])} %sb% ${node.op}= ${this.getOperation(operationWithOperation[1])} %sb%`, node));
+        }
+        this.endGroup();
+
+
+        if (!node.args) return;
+        node.args.forEach(child => this.populate(child));
+    }
+    defineLeftSideOfOperation(operation, constant) {
+        if (this.isConstant(constant)) {
+            this.addLine(`%set% ${operation} %sb% ${constant}`);
+            return;
+        }
+        this.addLine(`%calc% ${operation} %sb% = ${this.withScoreboardByVariable(constant)}`);
+    }
+    isParamter(node) {
+        if (!node) return false;
+        return node.isSymbolNode || node.isConstantNode;
+    }
+    isConstant(node, index = -1) {
+        return index == -1 ? node.value: node.args[index].value != undefined;
+    }
+    defineIfConstant(node, index = -1) {
+        if (this.isConstant(node, index)) {
+            this.defineConstant(index == -1 ? node.value: node.args[index].value);
+        }
     }
     startGroup() {
         this.currentGroup = "";
@@ -182,6 +198,9 @@ class MinecraftMathParser {
     endGroup() {
         this.isGroupActive = false;
         this.currentGroup && this.addLine(this.currentGroup + '\n');
+    }
+    addHeader(line) {
+        this.headerCode += line + '\n';
     }
     addLine(line, toLast) {
         if (this.isGroupActive) {
@@ -195,55 +214,47 @@ class MinecraftMathParser {
     addLines(...lines) {
         lines.forEach(line => this.addLine(line));
     }
-    addConstant(value, isSpecial) {
-        const line = `scoreboard players set #${isSpecial ? 'precision' : value} %sb% ${value}`;
+    defineConstant(value, name) {
+        const line = `scoreboard players set #${name ?? value} %sb% ${value}`;
 
         if (this.headerCode.includes(line)) return;
 
         this.addHeader(line);
     }
-    isSingle(node) {
-        if (!node) return false;
-        return 'value' in node || 'name' in node;
-    }
-    getConstantWithConstant(node) {
-        if (this.isSingle(node)) return null;
-        if (this.isSingle(node.args[0]) && this.isSingle(node.args[1])) {
+    getParamterParamter(node) {
+        if (this.isParamter(node)) return null;
+        if (this.isParamter(node.args[0]) && this.isParamter(node.args[1])) {
             return node.args;
         }
         return null;
     }
-    getConstantWithOperation(node) {
-        if (this.isSingle(node)) return null;
+    getParamterOperation(node) {
+        if (this.isParamter(node)) return null;
 
-        if (this.isSingle(node.args[0]) && !this.isSingle(node.args[1]) ||
-            this.isSingle(node.args[1]) && !this.isSingle(node.args[0])) {
+        if (this.isParamter(node.args[0]) && !this.isParamter(node.args[1]) ||
+            this.isParamter(node.args[1]) && !this.isParamter(node.args[0])) {
 
-            if (this.isSingle(node.args[0])) {
-                return {
-                    variable: node.args[0],
-                    operation: node.args[1],
-                    order: 0,
-                }
-            } else {
-                return {
-                    variable: node.args[1],
-                    operation: node.args[0],
-                    order: 1
-                }
+            if (this.isParamter(node.args[0])) return {
+                term: node.args[0],
+                operation: node.args[1]
+            }
+
+            return {
+                term: node.args[1],
+                operation: node.args[0]
             }
         }
 
         return null;
     }
-    getOperationWithOperation(node) {
-        if (this.isSingle(node)) return null;
-        if (!this.isSingle(node.args[0]) && !this.isSingle(node.args[1])) {
+    getOperationOperation(node) {
+        if (this.isParamter(node)) return null;
+        if (!this.isParamter(node.args[0]) && !this.isParamter(node.args[1])) {
             return node.args;
         }
         return null;
     }
-    addScoreboardByVariable(node) {
+    withScoreboardByVariable(node) {
         if (!node.name) return '#' + node.value + ' %sb%';
         if (/\$hash\$cmd\d+/.test(node.name)) node.name + ' %sb%';
         
@@ -263,19 +274,6 @@ class MinecraftMathParser {
     }
     isFn(node) {
         return node.op == '^' || typeof node.fn === 'object';
-    }
-    quotedBySymbol = {
-        '#': '$hash$',
-        '.': '$dot$',
-        ',': '$comma$',
-        '=': '$equal$',
-        '<': '$lessthan$',
-        '>': '$greaterthan$',
-        '&': '$ampersand$',
-        '!': '$not$',
-        '@': '$at$',
-        // '%':':percent$',
-        '~': '$tilde$'
     }
     quoteVariable(name, inverse = false) {
         const { quotedBySymbol } = this;
@@ -312,10 +310,6 @@ class MinecraftMathParser {
             i++;
         }
         return equation;
-    }
-    inverseOperationsMap = {
-        '/': '*',
-        '*': '/'
     }
     scaleOperation(line, node) {
         if (form.get('fractionalPrecision') == 0) return line;
@@ -354,8 +348,11 @@ function updateCode() {
 
         form.setError('equation', '');    
     } catch (error) {
-        form.setError('equation', error);
-        console.error(error);
+        var aux = error.stack.split("\n").splice(0, 2).join('\n');
+        
+        console.error(aux);
+
+        form.setError('equation', aux);
     }
 }
 
