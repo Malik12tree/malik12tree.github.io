@@ -9,13 +9,16 @@ class Form {
 		this.formdata = {};
 	}
 	onChange(formdata) {}
-	triggerOnChange() {
+	updateConditions() {
 		for (const id in this.form) {
 			const barData = this.form[id];
 			
-			if (Condition(barData.condition)) barData.bar.classList.remove('hidden');
+			if (Condition(barData.condition, this.formdata)) barData.bar.classList.remove('hidden');
 			else barData.bar.classList.add('hidden');
 		}
+	}
+	triggerOnChange() {
+		this.updateConditions();
 
 		this.onChange(this.formdata);
 	}
@@ -24,10 +27,16 @@ class Form {
 		return this.formdata[key];
 	}
 	set(key, value) {
+		this.form[key].value = value;
 		this.formdata[key] = value;
 	}
-	setError(key, value) {
-		this.node.querySelector(`div#${key}`).nextSibling.innerText = value;
+	setMessage(key, value, isWarning) {
+		const errorSpan = this.node.querySelector(`div#${key}`).nextSibling;
+		
+		if (isWarning) errorSpan.style.color = 'var(--color-warning)';
+		else errorSpan.style.color = 'var(--color-error)';
+
+		errorSpan.innerText = value;
 	}
 	build() {
 		const element = document.createElement('div');
@@ -107,6 +116,8 @@ class Form {
 			}
 
 			barData.bar = bar;
+
+			if (!Condition(barData.condition, this.formdata)) barData.bar.classList.add('hidden');
 		}
 
 		if (this.formFirst) element.append(...$(`<span>${this.lines}<span>`));
@@ -176,11 +187,30 @@ class Dialog extends Form {
 	}
 	onConfirm() {}
 }
-function Condition(condition) {
-	if (typeof condition == 'function') return condition();
+function Condition(condition, ...args) {
+	if (typeof condition == 'function') return condition(...args);
 
 	return condition == undefined || !!condition;
 }
+/** @type {{[key: string]: any}} */
+const ID = new Proxy({}, {
+	/** @param {String} key */
+	get(target, key) {
+		let value = '';
+		for (let i = 0; i < key.length; i++) {
+			
+			const charPrev = key[i - 1];
+			let char = key[i];
+			
+			if (char == '_') continue;
+			else if (charPrev == '_') char = char.toUpperCase();
+			else char = char.toLowerCase();
+			
+			value += char;
+		}
+		return value;
+	}
+});
 function buildToolBar(actions) {
 	const toolbar = document.createElement('div');
 	toolbar.classList.add('toolbar');
