@@ -398,12 +398,13 @@ hr {
     font-family: monospace;
     background-color: var(--color-code);
     
-    height: var(--prop-codeview_height);
+    height: 100%;
     width: 100%;
+    max-height: var(--prop-codeview_height);
     max-width: var(--prop-codeview_width);
 
     box-shadow: 0 0 20px black;
-    transition: height 500ms ease , max-width 500ms ease;
+    transition: max-height 500ms ease , max-width 500ms ease;
     
     box-sizing: border-box;
     
@@ -537,7 +538,7 @@ input[type="checkbox"]:hover{
     color: rgb(255, 34, 34);
     font-size: .85em;
     font-family: monospace;
-    margin-left: 205px;
+    margin-left: 160px;
 }
 /* Dialog */
 @keyframes popIn {
