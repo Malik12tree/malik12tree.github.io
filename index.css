@@ -8,15 +8,18 @@
     
     --prop-codeview_height: 400px;
     --prop-codeview_height_closed: 35px;
-    --prop-codeview_width: 500px
+    --prop-codeview_width: 500px;
+    
+    --color-error: hsl(0, 100%, 60%);
+    --color-warning: hsl(60, 100%, 60%);
 }
 .dark-theme {
-    --color-text: rgb(255, 255, 255);
-    --color-subtle_text: rgb(156, 156, 156);
-    --color-ui: rgb(60, 60, 60);
-    --color-dark_ui: rgb(30, 30, 30);
-    --color-back: rgb(23, 23, 23);
-    --color-code: rgb(26, 26, 31);
+    --color-text: hsl(0, 0%, 100%);
+    --color-subtle_text: hsl(0, 0%, 61%);
+    --color-ui: hsl(0, 0%, 24%);
+    --color-dark_ui: hsl(0, 0%, 12%);
+    --color-back: hsl(0, 0%, 9%);
+    --color-code: hsl(240, 9%, 11%);
     --color-accent: lightgreen;
     --color-accent_translucent: hsla(120, 73%, 75%, 0.75);
 }
@@ -213,7 +216,7 @@ li {
     height: 50%; */
 }
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .loadingScreen {
@@ -535,7 +538,7 @@ input[type="checkbox"]:hover{
 }
 
 .errorLabel {
-    color: rgb(255, 34, 34);
+    color: var(--color-error);
     font-size: .85em;
     font-family: monospace;
     margin-left: 160px;
