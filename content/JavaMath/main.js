@@ -10,7 +10,8 @@ const form = new Form({
     form: {
         equation: { label: "javamath.prop.equation", type: "text", value: 'a / b' },
         masterScoreboard: { label: "javamath.prop.mastersb", type: "text", value: "math" },
-        operationLabel: { label: "javamath.prop.oplabel", type: "text", value: "#op%index%" },
+        path: { label: "javamath.prop.path", type: "text", value: "math:calculation/" },
+        operationLabel: { label: "javamath.prop.oplabel", type: "text", value: "#op$i" },
         fractionalPrecision: { label: "javamath.prop.fractional_precision", type: "range", min: 0, max: 3, info: "javamath.prop.fractional_precision.desc" },
         variables: { label: "javamath.prop.variables", type: "node", builder({trigger}) {
 
@@ -23,6 +24,7 @@ const form = new Form({
                     click: () => {
                         addScore(undefined, undefined, trigger);
                         trigger();
+                        
                     }
                 },
                 {
@@ -53,7 +55,10 @@ class MinecraftMathParser {
         this.headerCode = '';
         this.bodyCode = '';
         this.scoreboard = 'math';
+        this.path = 'math:';
         this.fractionalPrecision = 2;
+        this.operationLabel = "#op%i";
+        this.variables = {}
     }
     _index = 0;
     currentGroup = "";
@@ -83,17 +88,19 @@ class MinecraftMathParser {
         this.headerCode = '';
         this.bodyCode = '';
 
-        equation = this.quoteVariable(this.parseCommands(equation), false).replaceAll(/(\d)\$dot\$(\d)/g, '$1.$2');
+        equation = this.quoteVariable(this.parseCommands(equation), false).replace(/(\d)\$dot\$(\d)/g, '$1.$2');
 
         this.headerCode = `# ${equation}\nscoreboard objectives add %sb% dummy\n\n` + this.headerCode;
 
         let tree = math.parse(equation);
         if (tree.content) tree = tree.content;
 
-        this.fractionalPrecision = 10 ** form.get('fractionalPrecision');
+        const tmp = this.fractionalPrecision;
+        this.fractionalPrecision =  10 ** tmp;
         this.defineConstant(this.fractionalPrecision, 'precision');
 
         this.setupTree(tree);
+        this.fractionalPrecision = tmp;
         this.populate(tree);
 
         this.addLine(`%calc% .out %sb% = ${this.getOperation({ index: 0 })} %sb%`, true);
@@ -101,11 +108,11 @@ class MinecraftMathParser {
         const code = this.headerCode + '\n' + '\n' + this.bodyCode;
 
         return this.quoteVariable(
-            // .replace('%%%', result)
             code
-                .replaceAll('%set%', 'scoreboard players set')
-                .replaceAll('%calc%', 'scoreboard players operation')
-                .replaceAll('%sb%', this.scoreboard),
+                .replace(/%set%/g, 'scoreboard players set')
+                .replace(/%calc%/g, 'scoreboard players operation')
+                .replace(/%path%/g, this.path)
+                .replace(/%sb%/g, this.scoreboard),
             true
         );
     }
@@ -120,7 +127,7 @@ class MinecraftMathParser {
         for (let i = 0; i < args.length; i++) {
             args[i] = args[i].content || args[i];
 
-            if ('value' in args[i]) args[i].value = Math.round(args[i].value * this.fractionalPrecision);
+            if (args[i].isConstantNode) args[i].value = Math.round(args[i].value * this.fractionalPrecision);
 
             this.setupTree(args[i], false);
         }
@@ -134,9 +141,10 @@ class MinecraftMathParser {
 
         this.startGroup();
         if (isfn) {
-            // this.addFn(operation, node);
-            
-            throw new SyntaxError('Math functions are not yet supported!');
+            this.addFn(operation, node);
+            form.setMessage(ID.EQUATION, 'Warning: Math functions are not downloadable yet.', true);
+
+            // throw new SyntaxError('Math functions are not yet supported!');
         }
         else if (constantWithConstant) { // a := b
             this.defineLeftSideOfOperation(operation, constantWithConstant[0]);
@@ -188,7 +196,7 @@ class MinecraftMathParser {
             
             this.defineLeftSideOfOperation(argumentName, argumentNode);
 
-            this.addLine(`execute store result ${operation} %sb% function %fnPaths%/${name}`);
+            this.addLine(`execute store result score ${operation} %sb% run function %path%${name}`);
         });
     }
     defineLeftSideOfOperation(name, node) {
@@ -280,17 +288,7 @@ class MinecraftMathParser {
         if (!node.name) return '#' + node.value + ' %sb%';
         if (/\$hash\$cmd\d+/.test(node.name)) node.name + ' %sb%';
         
-        const inputs = $('.variables').find('input');
-
-        const quotedName = this.quoteVariable(node.name, true);
-
-        let scoreboard = "unknown";
-        for (let i = 0; i < inputs.length; i += 2) {
-            if (inputs[i + 1].value != quotedName) continue;
-
-            scoreboard = inputs[i].value;
-            break;
-        }
+        const scoreboard = this.variables[this.quoteVariable(node.name, true)] || 'unkown';
 
         return node.name + ' ' +scoreboard;
     }
@@ -301,7 +299,7 @@ class MinecraftMathParser {
             for (const symbol in quotedBySymbol) {
                 const quotedSymbol = quotedBySymbol[symbol];
 
-                name = name.replaceAll(quotedSymbol, symbol);
+                name = name.replace(new RegExp(quotedSymbol, 'g'), symbol);
             }
             return name;
         }
@@ -315,7 +313,7 @@ class MinecraftMathParser {
         return quotedName;
     }
     getOperation(node, add = 0) {
-        return form.get('operationLabel').replaceAll('%index%', node.index + add);
+        return this.operationLabel.replace(/\$i/, node.index + add);
     }
     parseCommands(equation) {
         let match;
@@ -331,7 +329,7 @@ class MinecraftMathParser {
         return equation;
     }
     scaleOperation(line, node, add) {
-        if (form.get('fractionalPrecision') == 0) return line;
+        if (this.fractionalPrecision == 0) return line;
         const inverseOperation = this.inverseOperationsMap[node.op];
         
         if (!inverseOperation) return line;
@@ -356,26 +354,40 @@ codeview.node.addClass('stickleftbottom');
 $('.subBody').append(codeview.node);
 
 function updateCode() {
-    const equation = form.get('equation');
+    const equation = form.get(ID.EQUATION);
     if (equation == '') return;
 
-    try {
-        parser.scoreboard = form.get('masterScoreboard');
+    const variables = {};
+    parser.variables = variables;
+    parser.path = form.get(ID.PATH);
+    parser.scoreboard = form.get(ID.MASTER_SCOREBOARD);
+    parser.fractionalPrecision = form.get(ID.FRACTIONAL_PRECISION);
+    parser.operationLabel = form.get(ID.OPERATION_LABEL);
 
+    const definitions = $('.variables').children();
+
+    for (let i = 0; i < definitions.length; i++) {
+        const [_, scoreboardInput, nameInput] = $(definitions[i]).children();
+
+        variables[nameInput.value] = scoreboardInput.value;
+    }
+
+    try {
+        form.setMessage(ID.EQUATION, '');    
+        
         codeview.content = parser.parse(equation);
         codeview.update();
 
-        form.setError('equation', '');    
     } catch (error) {
-        // var aux = error.stack.split("\n").splice(0, 2).join('\n');
+        if (location.host == '127.0.0.1:5500') error = error.stack;
         
-        form.setError('equation', error);
+        form.setMessage(ID.EQUATION, error);
     }
 }
 
 function addScore(scoreboard, name, trigger) {
     name ??= "";
-    scoreboard ??= form.get('masterScoreboard');
+    scoreboard ??= parser.scoreboard;
 
     const score = document.createElement('div');
     score.classList.add("sbForm");
