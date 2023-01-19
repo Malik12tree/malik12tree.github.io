@@ -8,7 +8,7 @@ await new Promise((resolve, reject) => {
 
 const form = new Form({
     form: {
-        equation: { label: "javamath.prop.equation", type: "text", value: 'sin(sin(b)/2)' },
+        equation: { label: "javamath.prop.equation", type: "text", value: 'a / b' },
         masterScoreboard: { label: "javamath.prop.mastersb", type: "text", value: "math" },
         operationLabel: { label: "javamath.prop.oplabel", type: "text", value: "#op%index%" },
         fractionalPrecision: { label: "javamath.prop.fractional_precision", type: "range", min: 0, max: 3, info: "javamath.prop.fractional_precision.desc" },
