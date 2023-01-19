@@ -1,3 +1,5 @@
+import { functions } from "./functions.js";
+
 (async function () {
 await new Promise((resolve, reject) => {
   const loop = () => 'math' in window ? resolve(math) : setTimeout(loop, 10)
@@ -6,7 +8,7 @@ await new Promise((resolve, reject) => {
 
 const form = new Form({
     form: {
-        equation: { label: "javamath.prop.equation", type: "text", value: 'a / b' },
+        equation: { label: "javamath.prop.equation", type: "text", value: 'sin(sin(b)/2)' },
         masterScoreboard: { label: "javamath.prop.mastersb", type: "text", value: "math" },
         operationLabel: { label: "javamath.prop.oplabel", type: "text", value: "#op%index%" },
         fractionalPrecision: { label: "javamath.prop.fractional_precision", type: "range", min: 0, max: 3, info: "javamath.prop.fractional_precision.desc" },
@@ -53,7 +55,7 @@ class MinecraftMathParser {
         this.scoreboard = 'math';
         this.fractionalPrecision = 2;
     }
-    __index = 0;
+    _index = 0;
     currentGroup = "";
     isGroupActive = false;
     quotedBySymbol = {
@@ -79,12 +81,11 @@ class MinecraftMathParser {
 
     parse(equation) {
         this.headerCode = '';
-        
-        equation = this.quoteVariable(this.parseCommands(equation), false).replaceAll(/(?<=\d)\$dot\$(?=\d)/g, '.');
+        this.bodyCode = '';
+
+        equation = this.quoteVariable(this.parseCommands(equation), false).replaceAll(/(\d)\$dot\$(\d)/g, '$1.$2');
 
         this.headerCode = `# ${equation}\nscoreboard objectives add %sb% dummy\n\n` + this.headerCode;
-
-        this.bodyCode = '';
 
         let tree = math.parse(equation);
         if (tree.content) tree = tree.content;
@@ -109,12 +110,12 @@ class MinecraftMathParser {
         );
     }
     setupTree(node, _isRoot = true) {
-        if (_isRoot) this.__index = 0;
+        if (_isRoot) this._index = 0;
         
         const args = node.args;
         if (!args) return;
 
-        node.index = this.__index++;
+        node.index = this._index++;
 
         for (let i = 0; i < args.length; i++) {
             args[i] = args[i].content || args[i];
@@ -133,13 +134,13 @@ class MinecraftMathParser {
 
         this.startGroup();
         if (isfn) {
-            throw new SyntaxError('Math functions are not yet supported!')
-            // addFn(node, ...node.args);
-
+            // this.addFn(operation, node);
+            
+            throw new SyntaxError('Math functions are not yet supported!');
         }
         else if (constantWithConstant) { // a := b
             this.defineLeftSideOfOperation(operation, constantWithConstant[0]);
-            
+
             this.defineIfConstant(node, 1);
 
             this.addLine(this.scaleOperation(
@@ -147,19 +148,18 @@ class MinecraftMathParser {
             ));
 
         } else if (constantWithOperation) { // op(n) := a
-            
             const sideOperation = this.getOperation(constantWithOperation.operation);
             
-            if (node.op in this.orderSpecificOperations) {
-                
+            if (node.op in this.orderSpecificOperations && constantWithOperation.termBeforeOperation) {
                 this.defineLeftSideOfOperation(operation, constantWithOperation.term);
 
                 this.addLine(this.scaleOperation(`%calc% ${operation} %sb% ${node.op}= ${sideOperation} %sb%`, node));
+
             } else {
 
                 this.defineIfConstant(constantWithOperation.term);
                 
-                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${sideOperation} %sb% ${node.op}= ${this.withScoreboardByVariable(constantWithOperation.term)}`, node));
+                this.addLine(this.scaleOperation(`execute store result score ${operation} %sb% run %calc% ${sideOperation} %sb% ${node.op}= ${this.withScoreboardByVariable(constantWithOperation.term)}`, node, node.op == '/' ? 1: 0));
             }
             
         } else if (operationWithOperation) { // op(n) := op(m)
@@ -172,12 +172,33 @@ class MinecraftMathParser {
         if (!node.args) return;
         node.args.forEach(child => this.populate(child));
     }
-    defineLeftSideOfOperation(operation, constant) {
-        if (this.isConstant(constant)) {
-            this.addLine(`%set% ${operation} %sb% ${constant}`);
-            return;
+    isFn(node) {
+        return node.op == '^' || node.isFunctionNode;
+    }
+    addFn(operation, node) {
+        const name = node.name;
+        const func = functions[name];
+
+        if (!func) throw new SyntaxError(`Unsupported function "${name}"!`);
+        if (node.args.length > func.args.length) throw new SyntaxError(`Too much arguments specified for function "${name}"!`);
+        if (node.args.length < func.args.length) throw new SyntaxError(`Few arguments specified for function "${name}"!`);
+
+        func.args.forEach((argumentName, i) => {
+            const argumentNode = node.args[i];
+            
+            this.defineLeftSideOfOperation(argumentName, argumentNode);
+
+            this.addLine(`execute store result ${operation} %sb% function %fnPaths%/${name}`);
+        });
+    }
+    defineLeftSideOfOperation(name, node) {
+        if (this.isConstant(node)) {
+            return this.addLine(`%set% ${name} %sb% ${node}`);
         }
-        this.addLine(`%calc% ${operation} %sb% = ${this.withScoreboardByVariable(constant)}`);
+        if (node.isOperatorNode || node.isFunctionNode) {
+            return this.addLine(`%calc% ${name} %sb% = ${this.getOperation(node)} %sb%`);
+        }
+        return this.addLine(`%calc% ${name} %sb% = ${this.withScoreboardByVariable(node)}`);
     }
     isParamter(node) {
         if (!node) return false;
@@ -236,7 +257,8 @@ class MinecraftMathParser {
 
             if (this.isParamter(node.args[0])) return {
                 term: node.args[0],
-                operation: node.args[1]
+                operation: node.args[1],
+                termBeforeOperation: true
             }
 
             return {
@@ -272,9 +294,6 @@ class MinecraftMathParser {
 
         return node.name + ' ' +scoreboard;
     }
-    isFn(node) {
-        return node.op == '^' || typeof node.fn === 'object';
-    }
     quoteVariable(name, inverse = false) {
         const { quotedBySymbol } = this;
         
@@ -295,8 +314,8 @@ class MinecraftMathParser {
         }
         return quotedName;
     }
-    getOperation(node) {
-        return form.get('operationLabel').replaceAll('%index%', node.index);
+    getOperation(node, add = 0) {
+        return form.get('operationLabel').replaceAll('%index%', node.index + add);
     }
     parseCommands(equation) {
         let match;
@@ -311,13 +330,13 @@ class MinecraftMathParser {
         }
         return equation;
     }
-    scaleOperation(line, node) {
+    scaleOperation(line, node, add) {
         if (form.get('fractionalPrecision') == 0) return line;
         const inverseOperation = this.inverseOperationsMap[node.op];
         
         if (!inverseOperation) return line;
 
-        const scalar = `%calc% ${this.getOperation(node)} %sb% ${inverseOperation}= #precision %sb%`;
+        const scalar = `%calc% ${this.getOperation(node, add)} %sb% ${inverseOperation}= #precision %sb%`;
 
         
         if (node.op == '/')
@@ -348,11 +367,9 @@ function updateCode() {
 
         form.setError('equation', '');    
     } catch (error) {
-        var aux = error.stack.split("\n").splice(0, 2).join('\n');
+        // var aux = error.stack.split("\n").splice(0, 2).join('\n');
         
-        console.error(aux);
-
-        form.setError('equation', aux);
+        form.setError('equation', error);
     }
 }
 
