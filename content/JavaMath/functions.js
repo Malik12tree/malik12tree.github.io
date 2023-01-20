@@ -1,6 +1,6 @@
 export const functions = {
     sin: {
-        args: [ ".a" ],
+        args: [ "#x" ],
         files: {
             "init": function(path) {
                 
@@ -8,7 +8,15 @@ export const functions = {
         }
     },
     cos: {
-        args: [ ".a" ],
+        args: [ "#x" ],
+        files: {
+            "init": function(path) {
+                
+            }
+        }
+    },
+    tan: {
+        args: [ "#x" ],
         files: {
             "init": function(path) {
                 
@@ -16,11 +24,43 @@ export const functions = {
         }
     },
     sqrt: {
-        args: [ "a" ],
+        args: [ "#x" ],
         files: {
             "init": function(path) {
 
             }
         }
-    }
+    },
+    pow: {
+        args: [ "#x", "#y" ],
+        files: {
+            "init": function(path) {
+
+            }
+        }
+    },
+    random: {
+        args: [ "#min", "#max" ],
+        files: {
+            "init": function(path) {
+
+            }
+        }
+    },
+    sign: {
+        args: [ "#x" ],
+        files: {
+            "init": function(path) {
+                
+            }
+        }
+    },
+    log: {
+        args: [ "#x" ],
+        files: {
+            "init": function(path) {
+                
+            }
+        }
+    },
 }

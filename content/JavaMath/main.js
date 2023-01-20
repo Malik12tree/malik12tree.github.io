@@ -107,14 +107,11 @@ class MinecraftMathParser {
         
         const code = this.headerCode + '\n' + '\n' + this.bodyCode;
 
-        return this.quoteVariable(
-            code
+        return this.quoteVariable(code
                 .replace(/%set%/g, 'scoreboard players set')
                 .replace(/%calc%/g, 'scoreboard players operation')
                 .replace(/%path%/g, this.path)
-                .replace(/%sb%/g, this.scoreboard),
-            true
-        );
+                .replace(/%sb%/g, this.scoreboard), true);        
     }
     setupTree(node, _isRoot = true) {
         if (_isRoot) this._index = 0;
@@ -196,7 +193,8 @@ class MinecraftMathParser {
             
             this.defineLeftSideOfOperation(argumentName, argumentNode);
 
-            this.addLine(`execute store result score ${operation} %sb% run function %path%${name}`);
+            this.addLine(`function %path%${name}`);
+            this.addLine(`%calc% ${operation} %sb% = .out %sb%`);
         });
     }
     defineLeftSideOfOperation(name, node) {
@@ -286,8 +284,8 @@ class MinecraftMathParser {
     }
     withScoreboardByVariable(node) {
         if (!node.name) return '#' + node.value + ' %sb%';
-        if (/\$hash\$cmd\d+/.test(node.name)) node.name + ' %sb%';
-        
+        if (/^\$hash\$cmd\d+$/.test(node.name)) return node.name + ' %sb%';
+
         const scoreboard = this.variables[this.quoteVariable(node.name, true)] || 'unkown';
 
         return node.name + ' ' +scoreboard;
@@ -299,7 +297,7 @@ class MinecraftMathParser {
             for (const symbol in quotedBySymbol) {
                 const quotedSymbol = quotedBySymbol[symbol];
 
-                name = name.replace(new RegExp(quotedSymbol, 'g'), symbol);
+                name = name.replaceAll(quotedSymbol, symbol);
             }
             return name;
         }
@@ -377,7 +375,6 @@ function updateCode() {
         
         codeview.content = parser.parse(equation);
         codeview.update();
-
     } catch (error) {
         if (location.host == '127.0.0.1:5500') error = error.stack;
         
