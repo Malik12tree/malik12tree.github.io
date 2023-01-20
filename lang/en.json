@@ -30,6 +30,7 @@
     "javamath.prop.mastersb": "Scoreboard",
     "javamath.prop.oplabel": "Operation",
     "javamath.prop.fractional_precision": "Precision",
-    "javamath.prop.fractional_precision.desc": "Determines the accuracy of floating numbers.<br> This means that variables' last <code>N</code> digits are treated as floating points.",
-    "javamath.prop.variables": "Variables"
+    "javamath.prop.fractional_precision.desc": "Determines the accuracy of floating numbers.<br> This means that a variable's last <code>N</code> digits are treated as floating points.",
+    "javamath.prop.variables": "Variables",
+    "javamath.prop.path": "Path"
 }
