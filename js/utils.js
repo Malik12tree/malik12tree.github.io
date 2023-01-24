@@ -29,7 +29,7 @@ function isUUID(subject) {
 function isCombinationOf(subject, combination) {
     if (subject.length != combination.length) return false;
 
-    return !/(.).*\1/.test(token);
+    return !/(.).*\1/.test(subject);
 }
 
 const escape = document.createElement('textarea');
