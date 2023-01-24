@@ -65,9 +65,9 @@ export const MinecraftFunction = new CommandLanguageCompiler(
 	'<id?>': /^[-+._A-Za-z0-9]+$/,
 	'<boolean?>': /^(true|false)$/,
 
-	'<swizzle-xyz?>': function (token) {
-		if (isCombinationOf(token, 'xyz')) {
-			new TypeError(`axes '${token}' is not allowed. Expected a combination of xyz.`);
+	'<swizzle-xyz?>': token => {
+		if (!isCombinationOf(token, 'xyz')) {
+			throw new TypeError(`axes '${token}' is not allowed. Expected a combination of xyz.`);
 		}
 		
 		return true;
