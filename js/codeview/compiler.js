@@ -137,7 +137,7 @@ export class CommandLanguageCompiler {
 				} else try {
 					currentNode = this.getNext(currentToken, currentNode, rootCommandNode);
 					
-					if (lineTokens.length == 0) rootCommandNode = currentNode;
+					if (currentNode.type == 'keyword') rootCommandNode = currentNode;
 					
 					lineTokens.push(new Token({
 						content: currentToken,
