@@ -67,8 +67,6 @@ class MinecraftMathParser {
         '#': '$hash$',
         '.': '$dot$',
         '=': '$equal$',
-        '<': '$lessthan$',
-        '>': '$greaterthan$',
         '&': '$ampersand$',
         '!': '$not$',
         '@': '$at$',

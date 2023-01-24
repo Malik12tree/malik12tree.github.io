@@ -216,6 +216,12 @@ function buildToolBar(actions) {
 	toolbar.classList.add('toolbar');
 	
 	actions.forEach(action => {
+		if (action == '_') {
+			const divider = document.createElement('div');
+			divider.classList.add('toolSeperator');
+			toolbar.append(divider);
+			return;
+		}
 		const tool = document.createElement('img');
 		tool.classList.add('tool');
 		tool.src = action.icon;

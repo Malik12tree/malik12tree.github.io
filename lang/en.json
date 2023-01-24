@@ -14,7 +14,7 @@
     
     "page.javamath": "Java Math",
     "page.javamath.desc": "convert math equations into mcfunction form. also includes variable support!",
-    "page.javamath.info": "- Using <code>[&#60;command&#62;]</code> would be considered as the result of the command. For example <code>[time query gametime]</code> would substitute into the game time in ticks.<br><br>- Math functions are not yet supported.",
+    "page.javamath.info": "- Using <code>[&#60;command&#62;]</code> would be considered as the result of the command. For example <code>[time query gametime]</code> would substitute into the game time in ticks.",
     "page.mgens.desc": "the actual website.",
     "page.midinoteblock": "MIDI To Note Blocks",
     "page.midinoteblock.desc": "convert MIDI files into noteblocks packed in mcfunctions!",
